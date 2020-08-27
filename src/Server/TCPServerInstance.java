@@ -2,9 +2,7 @@ package Server;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 
 public class TCPServerInstance{
     private Socket socket;
@@ -13,6 +11,7 @@ public class TCPServerInstance{
     private Boolean userV = false;
     private Boolean accountV = false;
     private Boolean passwordV = false;
+    private Boolean fileExists = false;
     private String sendType;
     String[] accounts;
     String user;
@@ -21,6 +20,7 @@ public class TCPServerInstance{
     BufferedReader inFromClient;
     DataOutputStream outToClient;
     private String directory = "";
+    private Path pathToOldfile;
 
     TCPServerInstance(Socket socket){
         this.socket = socket;
@@ -62,7 +62,14 @@ public class TCPServerInstance{
                 outToClient.writeBytes(cdir(modeArgs[1]));
                 break;
             case "KILL":
+                outToClient.writeBytes(kill(modeArgs[1]));
+                break;
             case "NAME":
+                outToClient.writeBytes(name(modeArgs[1]));
+                break;
+            case "TOBE":
+                outToClient.writeBytes(tobe(modeArgs[1]));
+                break;
             case "DONE":
             case "RETR":
             case "STOR":
@@ -221,17 +228,56 @@ public class TCPServerInstance{
 
     public String cdir(String userInput) throws Exception{
         if(userV){
-            //Detect directory is there is whitespace (e.g. ftp/Restricted Folder/)
             String cdDirectory = "src/Server/"+userInput;
             // Test if it is a directory
             File file = new File(cdDirectory);
             if (!file.isDirectory()){
-                return "-Can't connect to directory because: " + cdDirectory + " is not a directory.";
+                return "-Can't connect to directory because: " + cdDirectory + " is not a directory"+ "\n";
             }
             directory = cdDirectory;
-            return "!Changed working dir to " + cdDirectory;
+            return "!Changed working dir to " + cdDirectory+ "\n";
         }
-        else return "-Can't connect to directory because: unauthorised";
+        else return "-Can't connect to directory because: unauthorised, please sign in"+ "\n";
+    }
+
+    public String kill(String userInput) throws Exception{
+        if(userV){
+            Path pathToFile = new File(directory+ "/" + userInput).toPath();
+            try {
+                Files.delete(pathToFile);
+                return "+"+userInput+" deleted"+ "\n";
+            } catch (NoSuchFileException e){
+                return "-Not deleted because file does not exist"+ "\n";
+            }
+        }
+        else return "-Not deleted because: unauthorised, please sign in"+ "\n";
+    }
+
+    public String name(String userInput) throws Exception{
+        if(userV){
+            Path pathToOldFileTemp = new File(directory+ "/" + userInput).toPath();
+            if(Files.exists(pathToOldFileTemp)){
+                fileExists = true;
+                this.pathToOldfile = pathToOldFileTemp;
+                return "+File exists"+ "\n";
+            }
+            return "-Can't find "+ userInput + "\n";
+        }
+        else return "-Not found because: unauthorised, please sign in"+ "\n";
+    }
+
+    public String tobe(String userInput) throws Exception{
+        if(userV && fileExists){
+            Path newFileName = new File(directory+ "/" + userInput).toPath();
+            if(Files.exists(newFileName)){
+                return "-File wasn't renamed because file already exists"+ "\n";
+            }
+            File oldFile = new File(String.valueOf(pathToOldfile));
+            oldFile.renameTo(new File(directory+ "/" + userInput));
+            return "-Can't find <old-file-spec>"+ "\n";
+        }
+        else return "-Not deleted because: unauthorised, please sign in"+ "\n";
     }
     
+
 }
