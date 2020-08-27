@@ -6,9 +6,9 @@ package Client; /**
 
 import java.io.*; 
 import java.net.*; 
-class TCPClient { 
+class TCPClient {
 
-    public static void main(String argv[]) throws Exception 
+    public static void main(String argv[]) throws Exception
     {
         Boolean running = true;
         String sentence; 
@@ -35,7 +35,10 @@ class TCPClient {
             System.out.println("FROM SERVER: " + modifiedSentence);
 
         }
-
 	
-    } 
+    }
+
+    public void connected(Socket socket){
+
+    }
 } 

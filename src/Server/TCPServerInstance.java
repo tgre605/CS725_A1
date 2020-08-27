@@ -2,6 +2,7 @@ package Server;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -19,6 +20,7 @@ public class TCPServerInstance{
     String account;
     BufferedReader inFromClient;
     DataOutputStream outToClient;
+    private String directory = "";
 
     TCPServerInstance(Socket socket){
         this.socket = socket;
@@ -57,6 +59,8 @@ public class TCPServerInstance{
                 break;
             case "LIST":
             case "CDIR":
+                outToClient.writeBytes(cdir(modeArgs[1]));
+                break;
             case "KILL":
             case "NAME":
             case "DONE":
@@ -75,11 +79,8 @@ public class TCPServerInstance{
         Boolean userExists = false;
         String[] lineAccounts = null;
         String linePassword = null;
-        String passSearch = null;
-        String[] accSearch = null;
 
         File authFile = new File("src/Server/authFile.txt");
-
 
         BufferedReader reader = new BufferedReader(new FileReader(authFile));
         String line = reader.readLine();
@@ -87,19 +88,33 @@ public class TCPServerInstance{
         {
             String[] userInfo = line.split(" ");
             String lineUsername = userInfo[0];
-            if(userInfo.length == 2){
-                lineAccounts = userInfo[1].split(",");
-            } else if(userInfo.length == 3){
-                lineAccounts = userInfo[1].split(",");
-                linePassword = userInfo[2];
-            }
             if(lineUsername.equals(userInput)){
                 userExists = true;
                 if(userInfo.length == 2){
-                    accSearch = lineAccounts;
+                    if(!(userInfo[1] == null)){
+                        lineAccounts = userInfo[1].split(",");
+                    }
+                    passwordV = true;
                 } else if(userInfo.length == 3){
-                    accSearch = lineAccounts;
-                    passSearch = linePassword;
+                    if(!(userInfo[1] == null)){
+                        lineAccounts = userInfo[1].split(",");
+                    }
+                    linePassword = userInfo[2];
+                }
+                if(userInfo.length == 1){
+                    accountV = true;
+                    passwordV = true;
+                } else if(userInfo.length == 2){
+                    accounts = lineAccounts;
+                    password = null;
+                    passwordV = true;
+                } else if(userInfo.length == 3){
+                    if(userInfo[1].isEmpty()){
+                        account = null;
+                        accountV = true;
+                    }
+                    accounts = lineAccounts;
+                    password = linePassword;
                 }
                 break;
             }
@@ -108,22 +123,17 @@ public class TCPServerInstance{
         if(userExists == false){
             return "Invalid Username" + "\n";
         }
-        if(passSearch==null){
-            password = null;
-            passwordV = true;
-        }
-        if (accSearch.length > 0){
-            accounts = accSearch;
-        } else {
-            accountV = true;
-        }
+        userV = true;
         if(passwordV && accountV){
-            userV = true;
             return "!" + userInput + " logged in" + "\n";
         } else {
-            userV = true;
-            password = passSearch;
-            return  "+User-id valid, send account and password" + "\n";
+            if(accountV == true){
+                return  "+User-id valid, send password" + "\n";
+            } else if(passwordV == true){
+                return  "+User-id valid, send account" + "\n";
+            } else {
+                return  "+User-id valid, send account and password" + "\n";
+            }
         }
     }
 
@@ -190,6 +200,38 @@ public class TCPServerInstance{
         }
     }
 
+    public void list(String userInput) throws Exception {
+        switch (userInput){
+            case "A":
+                sendType = "A";
+                outToClient.writeBytes("+Using Ascii"+ "\n");
+                break;
+            case "B":
+                sendType = "B";
+                outToClient.writeBytes("+Using Binary"+ "\n");
+                break;
+            case "C":
+                sendType = "C";
+                outToClient.writeBytes("+Using Continuous" + "\n");
+                break;
+            default:
+                outToClient.writeBytes("-Type not valid" + "\n");
+        }
+    }
 
-
+    public String cdir(String userInput) throws Exception{
+        if(userV){
+            //Detect directory is there is whitespace (e.g. ftp/Restricted Folder/)
+            String cdDirectory = "src/Server/"+userInput;
+            // Test if it is a directory
+            File file = new File(cdDirectory);
+            if (!file.isDirectory()){
+                return "-Can't connect to directory because: " + cdDirectory + " is not a directory.";
+            }
+            directory = cdDirectory;
+            return "!Changed working dir to " + cdDirectory;
+        }
+        else return "-Can't connect to directory because: unauthorised";
+    }
+    
 }
