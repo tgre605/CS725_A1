@@ -21,6 +21,7 @@ public class TCPServerInstance{
     DataOutputStream outToClient;
     private String directory = "";
     private Path pathToOldfile;
+    private String existingFile;
 
     TCPServerInstance(Socket socket){
         this.socket = socket;
@@ -258,6 +259,7 @@ public class TCPServerInstance{
             Path pathToOldFileTemp = new File(directory+ "/" + userInput).toPath();
             if(Files.exists(pathToOldFileTemp)){
                 fileExists = true;
+                existingFile = userInput;
                 this.pathToOldfile = pathToOldFileTemp;
                 return "+File exists"+ "\n";
             }
@@ -274,9 +276,17 @@ public class TCPServerInstance{
             }
             File oldFile = new File(String.valueOf(pathToOldfile));
             oldFile.renameTo(new File(directory+ "/" + userInput));
-            return "-Can't find <old-file-spec>"+ "\n";
+            fileExists = false;
+            String response = "+"+existingFile+" renamed to " + userInput;
+            this.existingFile = null;
+            this.pathToOldfile = null;
+            return response+ "\n";
         }
-        else return "-Not deleted because: unauthorised, please sign in"+ "\n";
+        if(!fileExists){
+            return "-File wasn't renamed because file does not exist"+ "\n";
+        }
+        else return "-Not found because: unauthorised, please sign in"+ "\n";
+        
     }
     
 
