@@ -5,15 +5,20 @@ package Client; /**
  **/
 
 import java.io.*; 
-import java.net.*; 
+import java.net.*;
+import java.nio.file.FileSystems;
+
 class TCPClient {
 
+    
+    static File ftp = FileSystems.getDefault().getPath("src/client/sftp/").toFile().getAbsoluteFile();
     public static void main(String argv[]) throws Exception
     {
         Boolean running = true;
         String sentence; 
         String modifiedSentence;
         Socket clientSocket = new Socket("localhost", 6789);
+        new File(ftp.toString()).mkdirs();
         while (running){
 
             BufferedReader inFromUser =
