@@ -3,10 +3,13 @@ package Server;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.*;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class TCPServerInstance{
-    private Socket socket;
-    static String authInfo;
+    private final Socket socket;
     private Boolean running = true;
     private Boolean userV = false;
     private Boolean accountV = false;
@@ -28,6 +31,7 @@ public class TCPServerInstance{
     private boolean cDirP = false;
     private boolean cDirA = false;
     private String directoryTemp;
+    private String storMode;
 
     TCPServerInstance(Socket socket){
         this.socket = socket;
@@ -40,63 +44,65 @@ public class TCPServerInstance{
             try {
                 String[] clientInput = inFromClient.readLine().split(" ");
                 if (clientInput[0].equals("DONE")) {
-                    outToClient.writeBytes("+(the message may be charge/accounting info)" + "\n");
+                    sendToClient("+(the message may be charge/accounting info)");
                     running = false;
                     socket.close();
                     break;
                 } else {
                     mode(clientInput);
                 }
-            } catch (Exception e){}
+            } catch (Exception ignored){}
         }
     }
 
     public void mode(String[] modeArgs) throws Exception {
         switch (modeArgs[0].toUpperCase()){
             case "USER":
-                outToClient.writeBytes(user(modeArgs[1]));
+                sendToClient(user(modeArgs[1]));
                 break;
             case "ACCT":
-                outToClient.writeBytes(acct(modeArgs[1]));
+                sendToClient(acct(modeArgs[1]));
                 break;
             case "PASS":
-                outToClient.writeBytes(pass(modeArgs[1]));
+                sendToClient(pass(modeArgs[1]));
                 break;
             case "TYPE":
                 type(modeArgs[1]);
                 break;
             case "LIST":
-                outToClient.writeBytes(list(modeArgs[1]));
+                sendToClient(list(modeArgs[1]));
                 break;
             case "CDIR":
-                outToClient.writeBytes(cdir(modeArgs[1]));
+                sendToClient(cdir(modeArgs[1]));
                 break;
             case "KILL":
-                outToClient.writeBytes(kill(modeArgs[1]));
+                sendToClient(kill(modeArgs[1]));
                 break;
             case "NAME":
-                outToClient.writeBytes(name(modeArgs[1]));
+                sendToClient(name(modeArgs[1]));
                 break;
             case "TOBE":
-                outToClient.writeBytes(tobe(modeArgs[1]));
+                sendToClient(tobe(modeArgs[1]));
                 break;
             case "SEND":
-                outToClient.writeBytes(send());
+                sendToClient(send());
                 break;
             case "RETR":
-                outToClient.writeBytes(retr(modeArgs[1]));
+                sendToClient(retr(modeArgs[1]));
+                break;
+            case "STOp":
+                fileToRetr = null;
+                retrV = false;
+                sendToClient("+ok, RETR aborted");
                 break;
             case "STOR":
                 break;
             default:
-                outToClient.writeBytes("-invalid Command" + "\n");
+                sendToClient("-invalid Command");
                 break;
         }
     }
-
-    public static void setAuthInfo(String authInfo) {
-        TCPServerInstance.authInfo = authInfo;
-    }
+    
 
     public String user(String userInput) throws Exception {
         Boolean userExists = false;
@@ -132,6 +138,7 @@ public class TCPServerInstance{
                     password = null;
                     passwordV = true;
                 } else if(userInfo.length == 3){
+                    assert userInfo[1] != null;
                     if(userInfo[1].isEmpty()){
                         account = null;
                         accountV = true;
@@ -143,25 +150,26 @@ public class TCPServerInstance{
             }
             line = reader.readLine();
         }
-        if(userExists == false){
-            return "Invalid Username" + "\n";
+        if(!userExists){
+            return "Invalid Username";
         }
         userV = true;
+        user = userInput;
         if(passwordV && accountV){
-            return "!" + userInput + " logged in" + "\n";
+            return "!" + userInput + " logged in";
         } else {
-            if(accountV == true){
-                return  "+User-id valid, send password" + "\n";
-            } else if(passwordV == true){
-                return  "+User-id valid, send account" + "\n";
+            if(accountV){
+                return  "+User-id valid, send password";
+            } else if(passwordV){
+                return  "+User-id valid, send account";
             } else {
-                return  "+User-id valid, send account and password" + "\n";
+                return  "+User-id valid, send account and password";
             }
         }
     }
 
-    public String acct(String userInput) throws Exception {
-        if(userV == true){
+    public String acct(String userInput) {
+        if(userV){
             for (String accountTest : accounts) {
                 if(userInput.equals(accountTest)){
                     account = userInput;
@@ -171,120 +179,130 @@ public class TCPServerInstance{
             }
         }
         if(passwordV && accountV){
-            if(cDirA == true){
+            if(cDirA){
                 String dir = changeDir();
                 cDirA = false;
-                return dir + "\n";
+                return dir;
             }
-            return "! Account valid, logged-in"+ "\n";
+            return "! Account valid, logged-in";
         } else if (accountV){
-            return "+Account valid, send password"+ "\n";
+            return "+Account valid, send password";
         } else {
-            return "-Invalid account, try again"+ "\n";
+            return "-Invalid account, try again";
         }
     }
 
-    public String pass(String userInput) throws Exception {
-        if(userV == true){
-            if(password.equals(null)){
+    public String pass(String userInput) {
+        if(userV){
+            if(password == null){
                 passwordV = true;
             }
             if(userInput.equals(password)){
                 passwordV = true;
             }
             if(accountV && passwordV){
-                if(cDirP == true){
+                if(cDirP){
                     String dir = changeDir();
                     cDirA = false;
-                    return dir + "\n";
+                    return dir;
                 }
-                return "! logged in"+ "\n";
-            } else if(passwordV == true){
-                return "+ Password ok, send account" + "\n";
+                return "! logged in";
+            } else if(passwordV){
+                return "+ Password ok, send account";
             }
         }
-        return "-Wrong password, try again"+ "\n";
+        return "-Wrong password, try again";
     }
 
     public void type(String userInput) throws Exception {
         switch (userInput){
             case "A":
                 sendType = "A";
-                outToClient.writeBytes("+Using Ascii"+ "\n");
+                sendToClient("+Using Ascii");
                 break;
             case "B":
                 sendType = "B";
-                outToClient.writeBytes("+Using Binary"+ "\n");
+                sendToClient("+Using Binary");
                 break;
             case "C":
                 sendType = "C";
-                outToClient.writeBytes("+Using Continuous" + "\n");
+                sendToClient("+Using Continuous");
                 break;
             default:
-                outToClient.writeBytes("-Type not valid" + "\n");
+                sendToClient("-Type not valid");
         }
     }
 
     public String list(String userInput) throws Exception {
         if(userV) {
             if ("F".equals(userInput)) {
-                Path path = new File(directory).toPath();
-                String response = null;
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(directory))) {
-                    response += directory + "\n";
-                    for (Path filePath : stream) {
-                        response += filePath.getFileName() + "\n";
-                    }
-                    return response;
-                } catch(Exception e) {
-                    return "failed";
+                StringBuilder response;
+                DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(directory));
+                response = new StringBuilder("+" + directory + "\r\n");
+                for (Path filePath : stream) {
+                    response.append(filePath.getFileName()).append("\r\n");
                 }
+                return response.toString();
+            }
+            if ("V".equals(userInput)) {
+                StringBuilder response;
+                DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(directory));
+                response = new StringBuilder("+" + directory + "\r\n");
+                SimpleDateFormat DateFor = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z");
+                for (Path filePath : stream) {
+                    File file = new File(filePath.toString());
+                    response.append(String.format("%6s",file.getName())).append(" | ");
+                    response.append("Size: ").append(String.format("%6s", file.length() / 1000)).append("kBs").append(" | ");
+                    response.append("Last modified: ").append(DateFor.format(new Date(file.lastModified()))).append(" | ");
+                    FileOwnerAttributeView attr = Files.getFileAttributeView(file.toPath(), FileOwnerAttributeView.class);
+                    response.append(String.format("Owner: " + "%6s", attr.getOwner().getName())).append("\r\n");
+                }
+                return response.toString();
             }
         }
-        return "-Not found because: unauthorised, please sign in"+ "\n";
+        return "-Not found because: unauthorised, please sign in";
     }
 
-    public String cdir(String userInput) throws Exception{
+    public String cdir(String userInput) {
         String cdDirectory = "src/Server/"+userInput;
         if(userV && passwordV && accountV){
             directoryTemp = cdDirectory;
-            String response = changeDir();
-            return response;
+            return changeDir();
         }
-        
+
         if(userV){
             cdDirectory = "src/Server/"+userInput;
             File file = new File(cdDirectory);
             if (!file.isDirectory()){
-                return "-Can't connect to directory because: " + cdDirectory + " is not a directory"+ "\n";
+                return "-Can't connect to directory because: " + cdDirectory + " is not a directory";
             }
             directoryTemp = cdDirectory;
-            if(accountV == false && passwordV == false){
+            if(!accountV && !passwordV){
                 cDirA = true;
                 cDirP = true;
-                return "+directory ok, send account/password" +"\n";
+                return "+directory ok, send account/password";
             }
-            if(accountV == false){
+            if(!accountV){
                 cDirA = true;
-                return "+directory ok, send account/password" +"\n";
+                return "+directory ok, send account/password";
             }
-            if(passwordV == false){
+            if(!passwordV){
                 cDirP = true;
-                return "+directory ok, send account/password" +"\n";
+                return "+directory ok, send account/password";
             }
-            return"+directory ok, send account/password" + "\n";
+            return"+directory ok, send account/password";
         }
-        return "-Can't connect to directory because: unauthorised, please sign in"+ "\n";
+        return "-Can't connect to directory because: unauthorised, please sign in";
     }
 
     private String changeDir() {
         File file = new File(directoryTemp);
         if (!file.isDirectory()){
-            return "-Can't connect to directory because: " + directoryTemp + " is not a directory"+ "\n";
+            return "-Can't connect to directory because: " + directoryTemp + " is not a directory";
         }
         directory = directoryTemp;
         directoryTemp = null;
-        return "!Changed working dir to " + directory+ "\n";
+        return "!Changed working dir to " + directory;
     }
 
     public String kill(String userInput) throws Exception{
@@ -292,33 +310,33 @@ public class TCPServerInstance{
             Path pathToFile = new File(directory+ "/" + userInput).toPath();
             try {
                 Files.delete(pathToFile);
-                return "+"+userInput+" deleted"+ "\n";
+                return "+"+userInput+" deleted";
             } catch (NoSuchFileException e){
-                return "-Not deleted because file does not exist"+ "\n";
+                return "-Not deleted because file does not exist";
             }
         }
-        else return "-Not deleted because: unauthorised, please sign in"+ "\n";
+        else return "-Not deleted because: unauthorised, please sign in";
     }
 
-    public String name(String userInput) throws Exception{
+    public String name(String userInput) {
         if(userV){
             Path pathToOldFileTemp = new File(directory+ "/" + userInput).toPath();
             if(Files.exists(pathToOldFileTemp)){
                 fileExists = true;
                 existingFile = userInput;
                 this.pathToOldfile = pathToOldFileTemp;
-                return "+File exists"+ "\n";
+                return "+File exists";
             }
-            return "-Can't find "+ userInput + "\n";
+            return "-Can't find "+ userInput;
         }
-        else return "-Not found because: unauthorised, please sign in"+ "\n";
+        else return "-Not found because: unauthorised, please sign in";
     }
 
-    public String tobe(String userInput) throws Exception{
+    public String tobe(String userInput) {
         if(userV && fileExists){
             Path newFileName = new File(directory+ "/" + userInput).toPath();
             if(Files.exists(newFileName)){
-                return "-File wasn't renamed because file already exists"+ "\n";
+                return "-File wasn't renamed because file already exists";
             }
             File oldFile = new File(String.valueOf(pathToOldfile));
             oldFile.renameTo(new File(directory+ "/" + userInput));
@@ -326,27 +344,27 @@ public class TCPServerInstance{
             String response = "+"+existingFile+" renamed to " + userInput;
             this.existingFile = null;
             this.pathToOldfile = null;
-            return response+ "\n";
+            return response;
         }
         if(!fileExists){
-            return "-File wasn't renamed because file does not exist"+ "\n";
+            return "-File wasn't renamed because file does not exist";
         }
-        else return "-Not found because: unauthorised, please sign in"+ "\n";
-        
+        else return "-Not found because: unauthorised, please sign in";
+
     }
 
-    public String retr(String userInput) throws Exception{
+    public String retr(String userInput) {
         if(userV){
             Path pathToFileTemp = new File(directory+ "/" + userInput).toPath();
             if(Files.exists(pathToFileTemp)){
-                Long fileSize = new File(String.valueOf(pathToFileTemp)).length();
+                long fileSize = new File(String.valueOf(pathToFileTemp)).length();
                 fileToRetr = userInput;
                 retrV = true;
-                return "Size of file to send:"+ fileSize+ "\n";
+                return "Size of file to send:"+ fileSize;
             }
-            return "-Can't find "+ userInput + "\n";
+            return "-Can't find "+ userInput;
         }
-        else return "-Not found because: unauthorised, please sign in"+ "\n";
+        else return "-Not found because: unauthorised, please sign in";
     }
 
     public String send() throws Exception{
@@ -357,8 +375,7 @@ public class TCPServerInstance{
             fileToRetr = null;
             try (BufferedInputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
                 outToClient.flush();
-                // Read and send by byte
-                int p = 0;
+                int p;
                 while ((p = bufferedStream.read(bytes)) >= 0) {
                     outToClient.write(bytes, 0, p);
                 }
@@ -370,8 +387,92 @@ public class TCPServerInstance{
             }
         }
         if(userV){
-            return "No file selected" + "\n";
+            return "No file selected";
         }
-        else return "-Not found because: unauthorised, please sign in"+ "\n";
+        else return "-Not found because: unauthorised, please sign in";
+    }
+
+    private void sendToClient(String message) throws IOException {
+        outToClient.writeBytes(message + "\0");
+    }
+
+    public void stor(String[] userInput) throws Exception{
+
+        File file = new File(directory + userInput[3]);
+        switch (userInput[1]){
+            case "NEW":
+                if (file.isFile()){
+                    storMode = "NEW";
+                    sendToClient("+File exists, will create new generation of file");
+                } else {
+                    storMode = "NEWC";
+                    sendToClient("+File does not exist, will create new file");
+                }
+                break;
+            case "OLD":
+                if (file.isFile()){
+                    storMode = "OLD";
+                    sendToClient("+Will write over old file");
+                } else {
+                    storMode = "NEWC";
+                    sendToClient("+Will create new file");
+                }
+                break;
+            case "APP":
+                if (file.isFile()){
+                    storMode = "APP";
+                    sendToClient("+Will append to file");
+                } else {
+                    storMode = "NEWC";
+                    sendToClient("+Will create file");
+                }
+                break;
+            default:
+                sendToClient("-Invalid request");
+                return;
+        }
+        String[] resp = inFromClient.readLine().split(" ");
+
+
+        A: while (true) {
+            if (null == resp[0]) {
+                sendToClient("-Invalid Client Response. Awaiting SIZE <number-of-bytes-in-file>. Send STOP to stop transfer.");
+            } else {
+                switch (resp[0]) {
+                    case "SIZE":
+                        try {
+                            fileSize = Integer.parseInt(resp[1]);
+                            if (SFTPServer.DEBUG) System.out.println("File: " + fileSize + "/Directory: " + dir.getFreeSpace());
+                            if (dir.getFreeSpace() > fileSize) {
+                                sendToClient("+ok, waiting for file");
+                                break A;
+                            } else {
+                                sendToClient("-Not enough room, don't send it");
+                                return;
+                            }
+                        }catch (NumberFormatException e){
+                            sendToClient("-Invalid SIZE Argument. Could not convert " + resp[1] + " to a number.");
+                        }
+                    case "STOP":
+                        storMode = "";
+                        sendToClient("-Stopping transfer");
+                        return;
+                    default:
+                        sendToClient("-Invalid Client Response. Awaiting SIZE <number-of-bytes-in-file>. Send STOP to stop transfer.");
+                        break;
+                }
+            }
+        }
+        //find a different filename to save file as
+        if ("NEW".equals(storMode)){
+            while (file.isFile()) {
+                String[] filename = filepath.split("\\.");
+                SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+                filename[0] = filename[0] + "-" + DATE_FORMAT.format(new Date());
+                filepath = filename[0] + "." + filename[1];
+                file = new File(root.toString() + directory + filename[0] + "." + filename[1]);
+            };
+        }
+        receiveFile(fileSize);
     }
 }
