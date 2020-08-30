@@ -132,6 +132,8 @@ class TCPClient {
         if ("-".equals(serverResponse.substring(0,1))){
             System.out.println(serverResponse);
         } else {
+            fileToRetr = userInput[1];
+            System.out.println(serverResponse);
             size = Integer.parseInt(serverResponse);
         }
     }
@@ -148,19 +150,19 @@ class TCPClient {
             bufferedStream.close();
             System.out.println("File " + fileToRetr + " was saved.");
         } else {
-            try (FileOutputStream fileStream = new FileOutputStream(file, false)) {
-                int e;
-                int i = 0;
-                byte[] bytes = new byte[(int) size];
-                while (i < size) {
-                    e = binFromServer.read(bytes);
-                    fileStream.write(bytes, 0, e);
-                    i+=e;
-                }
-                fileStream.flush();
-                fileStream.close();
-                System.out.println("File " + fileToRetr + " was saved.");
+            FileOutputStream fileStream = new FileOutputStream(file, false);
+            int e;
+            int i = 0;
+            byte[] bytes = new byte[(int) size];
+            while (i < size) {
+                e = binFromServer.read(bytes);
+                fileStream.write(bytes, 0, e);
+                i+=e;
             }
+            fileStream.flush();
+            fileStream.close();
+            System.out.println("File " + fileToRetr + " was saved.");
+
         }
     }
 
