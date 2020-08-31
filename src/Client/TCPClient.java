@@ -12,7 +12,6 @@ class TCPClient {
     static DataOutputStream binToServer;
     static DataInputStream binFromServer;
     static String sentence;
-
     static File ftp = FileSystems.getDefault().getPath("src/client/sftp/").toFile().getAbsoluteFile();
     private static String sendType;
     private static boolean dontRead;
@@ -32,7 +31,8 @@ class TCPClient {
         inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         binToServer = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
         binFromServer = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-        
+        binFromServer = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
+        System.out.println(readFromServer(inFromServer));
         
         while (running) {
             
@@ -221,8 +221,6 @@ class TCPClient {
         }
         dontRead = true;
     }
-
-        
     
     public static void stor() throws Exception {
         String[] userInput = sentence.split(" ");
@@ -232,6 +230,7 @@ class TCPClient {
             file = new File(ftp.getPath() + "/" + userInput[2]);
             if (!file.isFile()) {
                 System.out.println("-File does not exist");
+                dontRead = true;
                 return;
             }
         }
@@ -250,7 +249,6 @@ class TCPClient {
             sendToServer("SIZE " + file.length());
             serverResponse = readFromServer(inFromServer);
             System.out.println("FROM SERVER: " + serverResponse);
-            
             //if server responds with + send file with correct amount of bytes
             if ("+".equals(serverResponse.substring(0,1))){
                 outToServer.flush();
@@ -259,8 +257,7 @@ class TCPClient {
             }
         }
     }
-
-
+    
     /*method of reading from server by reading char by char and checking if \0 has come as the end of line
      * If end of line reached but not end of input keep reading*/
     private static String readFromServer(BufferedReader inFromServer) throws IOException {

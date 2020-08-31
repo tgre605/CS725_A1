@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
 
-public class TCPServerInstance{
+public class TCPServerInstance {
     private final Socket socket;
     private Boolean running = true;
     private Boolean userV = false;
@@ -36,9 +36,10 @@ public class TCPServerInstance{
     private DataOutputStream binToClient;
     private DataInputStream binFromClient;
 
-    TCPServerInstance(Socket socket){
+    TCPServerInstance(Socket socket) {
         this.socket = socket;
     }
+
     public boolean runInstance() throws Exception {
         //initialise ascii/binary inputs/outputs
         inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -46,8 +47,8 @@ public class TCPServerInstance{
         binToClient = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         binFromClient = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         new File(ftp.toString()).mkdirs();
-        
-        while (running){
+        sendToClient("+TGRE605 SFTP Service");
+        while (running) {
             //Read client input and send input to mode function unless DONE is received
             String clientInputS = readFromClient(inFromClient);
             String[] clientInput = clientInputS.split(" ");
@@ -78,8 +79,8 @@ public class TCPServerInstance{
             case "SEND" -> {
                 //if send command is received, depending on if RETR has been called, execute send
                 int resp = send();
-                if(resp == 0){
-                }else if(resp == 1) {
+                if (resp == 0) {
+                } else if (resp == 1) {
                     sendToClient("No file selected");
                 } else {
                     sendToClient("-Not found because: unauthorised, please sign in");
@@ -107,38 +108,37 @@ public class TCPServerInstance{
         File authFile = new File("src/Server/authFile.txt");
 
         /*Read each line of auth file. If user matches user in auth file
-        * save username, account and password to local variables.
-        * If no account/password exists, assume verified user
-        * if no matching user, tell client invalid input */
+         * save username, account and password to local variables.
+         * If no account/password exists, assume verified user
+         * if no matching user, tell client invalid input */
         BufferedReader reader = new BufferedReader(new FileReader(authFile));
         String line = reader.readLine();
-        while (line != null)
-        {
+        while (line != null) {
             String[] userInfo = line.split(" ");
             String lineUsername = userInfo[0];
-            if(lineUsername.equals(userInput)){
+            if (lineUsername.equals(userInput)) {
                 userExists = true;
-                if(userInfo.length == 2){
-                    if(!(userInfo[1] == null)){
+                if (userInfo.length == 2) {
+                    if (!(userInfo[1] == null)) {
                         lineAccounts = userInfo[1].split(",");
                     }
                     passwordV = true;
-                } else if(userInfo.length == 3){
-                    if(!(userInfo[1] == null)){
+                } else if (userInfo.length == 3) {
+                    if (!(userInfo[1] == null)) {
                         lineAccounts = userInfo[1].split(",");
                     }
                     linePassword = userInfo[2];
                 }
-                if(userInfo.length == 1){
+                if (userInfo.length == 1) {
                     accountV = true;
                     passwordV = true;
-                } else if(userInfo.length == 2){
+                } else if (userInfo.length == 2) {
                     accounts = lineAccounts;
                     password = null;
                     passwordV = true;
-                } else if(userInfo.length == 3){
+                } else if (userInfo.length == 3) {
                     assert userInfo[1] != null;
-                    if(userInfo[1].isEmpty()){
+                    if (userInfo[1].isEmpty()) {
                         account = null;
                         accountV = true;
                     }
@@ -149,31 +149,31 @@ public class TCPServerInstance{
             }
             line = reader.readLine();
         }
-        if(!userExists){
+        if (!userExists) {
             return "Invalid Username";
         }
         userV = true;
         user = userInput;
         //If password/account exists, ask user to send password/account to be verified
-        if(passwordV && accountV){
+        if (passwordV && accountV) {
             return "!" + userInput + " logged in";
         } else {
-            if(accountV){
-                return  "+User-id valid, send password";
-            } else if(passwordV){
-                return  "+User-id valid, send account";
+            if (accountV) {
+                return "+User-id valid, send password";
+            } else if (passwordV) {
+                return "+User-id valid, send account";
             } else {
-                return  "+User-id valid, send account and password";
+                return "+User-id valid, send account and password";
             }
         }
     }
-    
+
     public String acct(String userInput) {
         /*If user exists, check account input if matches an account for that user
-        * if matching, set variable account to user input*/
-        if(userV){
+         * if matching, set variable account to user input*/
+        if (userV) {
             for (String accountTest : accounts) {
-                if(userInput.equals(accountTest)){
+                if (userInput.equals(accountTest)) {
                     account = userInput;
                     accountV = true;
                     break;
@@ -181,15 +181,15 @@ public class TCPServerInstance{
             }
         }
         /*If attempting to change directory without being logged in
-        * required log in to account, then immediately change directory*/
-        if(passwordV && accountV){
-            if(cDirA){
+         * required log in to account, then immediately change directory*/
+        if (passwordV && accountV) {
+            if (cDirA) {
                 String dir = changeDir();
                 cDirA = false;
                 return dir;
             }
             return "! Account valid, logged-in";
-        } else if (accountV){
+        } else if (accountV) {
             return "+Account valid, send password";
         } else {
             return "-Invalid account, try again";
@@ -197,25 +197,25 @@ public class TCPServerInstance{
     }
 
     public String pass(String userInput) {
-        if(userV){
+        if (userV) {
             //if user doesnt have password, set verified password to true
-            if(password == null){
+            if (password == null) {
                 passwordV = true;
             }
             //if user input matches expected password, set verified password to true
-            if(userInput.equals(password)){
+            if (userInput.equals(password)) {
                 passwordV = true;
             }
             /*If attempting to change directory without being logged in
              * required log in to password, then immediately change directory*/
-            if(accountV && passwordV){
-                if(cDirP){
+            if (accountV && passwordV) {
+                if (cDirP) {
                     String dir = changeDir();
                     cDirA = false;
                     return dir;
                 }
                 return "! logged in";
-            } else if(passwordV){
+            } else if (passwordV) {
                 return "+ Password ok, send account";
             }
         }
@@ -243,7 +243,7 @@ public class TCPServerInstance{
 
     public String list(String userInput) throws Exception {
         //if user send LIST F, only print file/directoy names on new lines
-        if(userV) {
+        if (userV) {
             if ("F".equals(userInput)) {
                 StringBuilder response;
                 DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(directory));
@@ -261,7 +261,7 @@ public class TCPServerInstance{
                 SimpleDateFormat DateFor = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z");
                 for (Path filePath : stream) {
                     File file = new File(filePath.toString());
-                    response.append(String.format("%6s",file.getName())).append(" | ");
+                    response.append(String.format("%6s", file.getName())).append(" | ");
                     response.append("Size: ").append(String.format("%6s", file.length() / 1000)).append("kBs").append(" | ");
                     response.append("Last modified: ").append(DateFor.format(new Date(file.lastModified()))).append(" | ");
                     FileOwnerAttributeView attr = Files.getFileAttributeView(file.toPath(), FileOwnerAttributeView.class);
@@ -275,34 +275,34 @@ public class TCPServerInstance{
 
     public String cdir(String userInput) {
         /*given correct input of real directory, change global vairable directory
-        * to new directory name if user is logged in correctly */
-        String cdDirectory = "src/Server/"+userInput;
-        if(userV && passwordV && accountV){
+         * to new directory name if user is logged in correctly */
+        String cdDirectory = "src/Server/" + userInput;
+        if (userV && passwordV && accountV) {
             directoryTemp = cdDirectory;
             return changeDir();
         }
         //if use is not logged in, ask for password/account and immediately change directory if entered correctly
-        if(userV){
-            cdDirectory = "src/Server/"+userInput;
+        if (userV) {
+            cdDirectory = "src/Server/" + userInput;
             File file = new File(cdDirectory);
-            if (!file.isDirectory()){
+            if (!file.isDirectory()) {
                 return "-Can't connect to directory because: " + cdDirectory + " is not a directory";
             }
             directoryTemp = cdDirectory;
-            if(!accountV && !passwordV){
+            if (!accountV && !passwordV) {
                 cDirA = true;
                 cDirP = true;
                 return "+directory ok, send account/password";
             }
-            if(!accountV){
+            if (!accountV) {
                 cDirA = true;
                 return "+directory ok, send account/password";
             }
-            if(!passwordV){
+            if (!passwordV) {
                 cDirP = true;
                 return "+directory ok, send account/password";
             }
-            return"+directory ok, send account/password";
+            return "+directory ok, send account/password";
         }
         return "-Can't connect to directory because: unauthorised, please sign in";
     }
@@ -310,7 +310,7 @@ public class TCPServerInstance{
     //function for changing directory variable if directory exists
     private String changeDir() {
         File file = new File(directoryTemp);
-        if (!file.isDirectory()){
+        if (!file.isDirectory()) {
             return "-Can't connect to directory because: " + directoryTemp + " is not a directory";
         }
         directory = directoryTemp;
@@ -319,74 +319,71 @@ public class TCPServerInstance{
     }
 
     //if user is logged in, will deleted file if it exists in current directory
-    public String kill(String userInput) throws Exception{
-        if(userV){
-            Path pathToFile = new File(directory+ "/" + userInput).toPath();
+    public String kill(String userInput) throws Exception {
+        if (userV) {
+            Path pathToFile = new File(directory + "/" + userInput).toPath();
             try {
                 Files.delete(pathToFile);
-                return "+"+userInput+" deleted";
-            } catch (NoSuchFileException e){
+                return "+" + userInput + " deleted";
+            } catch (NoSuchFileException e) {
                 return "-Not deleted because file does not exist";
             }
-        }
-        else return "-Not deleted because: unauthorised, please sign in";
+        } else return "-Not deleted because: unauthorised, please sign in";
     }
-    
+
     /*Checks to see if file exists in directory and if it does, set global variable
-    * that shows that file exists. Set path to file that can be user in TOBE function */
+     * that shows that file exists. Set path to file that can be user in TOBE function */
     public String name(String userInput) {
-        if(userV){
-            Path pathToOldFileTemp = new File(directory+ "/" + userInput).toPath();
-            if(Files.exists(pathToOldFileTemp)){
+        if (userV) {
+            Path pathToOldFileTemp = new File(directory + "/" + userInput).toPath();
+            if (Files.exists(pathToOldFileTemp)) {
                 fileExists = true;
                 existingFile = userInput;
                 this.pathToOldfile = pathToOldFileTemp;
                 return "+File exists";
             }
-            return "-Can't find "+ userInput;
-        }
-        else return "-Not found because: unauthorised, please sign in";
+            return "-Can't find " + userInput;
+        } else return "-Not found because: unauthorised, please sign in";
     }
 
     /*If NAME has been called correctly, user can input a desired name for the file.
-    * If that name is not taken, it will be renamed*/
+     * If that name is not taken, it will be renamed*/
     public String tobe(String userInput) {
-        if(userV && fileExists){
-            Path newFileName = new File(directory+ "/" + userInput).toPath();
-            if(Files.exists(newFileName)){
+        if (userV && fileExists) {
+            Path newFileName = new File(directory + "/" + userInput).toPath();
+            if (Files.exists(newFileName)) {
                 return "-File wasn't renamed because file already exists";
             }
             File oldFile = new File(String.valueOf(pathToOldfile));
             String fileType = oldFile.toString().split("\\.")[1];
-            oldFile.renameTo(new File(directory+ "/" + userInput+"."+fileType));
+            oldFile.renameTo(new File(directory + "/" + userInput + "." + fileType));
             fileExists = false;
-            String response = "+"+existingFile+" renamed to " + userInput+"."+fileType;
+            String response = "+" + existingFile + " renamed to " + userInput + "." + fileType;
             this.existingFile = null;
             this.pathToOldfile = null;
             return response;
         }
-        if(!fileExists){
+        if (!fileExists) {
             return "-File wasn't renamed because file does not exist";
-        }
-        else return "-Not found because: unauthorised, please sign in";
+        } else return "-Not found because: unauthorised, please sign in";
 
     }
 
     /* Given user input of file they want to retrieve, server will check
-    * if file exists and if correct send type has been selected
-    * If incorrect type, tell client to change mode
-    * if correct type, set global value for file server will send in SEND command*/
+     * if file exists and if correct send type has been selected
+     * If incorrect type, tell client to change mode
+     * if correct type, set global value for file server will send in SEND command*/
     public String retr(String userInput) throws IOException {
-        if(userV){
-            Path pathToFileTemp = new File(directory+ "/" + userInput).toPath();
-            if(Files.exists(pathToFileTemp)){
+        if (userV) {
+            Path pathToFileTemp = new File(directory + "/" + userInput).toPath();
+            if (Files.exists(pathToFileTemp)) {
                 boolean binary = isBinary(new File(pathToFileTemp.toString()));
-                if(binary){
-                    if(Objects.equals(sendType, "C") || Objects.equals(sendType, "B")){
-                    }else return "-Incorrect type selected";
+                if (binary) {
+                    if (Objects.equals(sendType, "C") || Objects.equals(sendType, "B")) {
+                    } else return "-Incorrect type selected";
 
                 }
-                if(!binary && !Objects.equals(sendType, "A")){
+                if (!binary && !Objects.equals(sendType, "A")) {
                     return "-Incorrect type selected";
                 }
                 long fileSize = new File(String.valueOf(pathToFileTemp)).length();
@@ -394,13 +391,12 @@ public class TCPServerInstance{
                 retrV = true;
                 return String.valueOf(fileSize);
             }
-            return "-Can't find "+ userInput;
-        }
-        else return "-Not found because: unauthorised, please sign in";
+            return "-Can't find " + userInput;
+        } else return "-Not found because: unauthorised, please sign in";
     }
-    
+
     /*If RETR has been used correctly, file to retrieve will be set and global boolean
-    * retrV will be set telling server it is ok to execute send command.*/
+     * retrV will be set telling server it is ok to execute send command.*/
     public int send() throws Exception {
         if (userV && retrV) {
             Path pathToFile = new File(directory + "/" + fileToRetr).toPath();
@@ -428,7 +424,7 @@ public class TCPServerInstance{
         }
         return 2;
     }
-    
+
     //if file is Ascii type, use BufferedInputStream to read in file and send byte by byte
     public static void bufStream(File file, byte[] bytes, DataOutputStream outToClient) throws IOException {
         BufferedInputStream bufferedStream = new BufferedInputStream(new FileInputStream(file));
@@ -440,24 +436,23 @@ public class TCPServerInstance{
         bufferedStream.close();
         outToClient.flush();
     }
-
-
-    public void stor(String[] userInput) throws Exception{
-        if(userInput.length != 3){
+    
+    public void stor(String[] userInput) throws Exception {
+        if (userInput.length != 3) {
             sendToClient("-Invalid input");
             return;
         }
         /*If user has input 3 argument for STOR command, check second argument to see how
-        * they want the file stored via a switch case
-        * If invalid STOR mode, send invalid to client*/
-        if(userV){
+         * they want the file stored via a switch case
+         * If invalid STOR mode, send invalid to client*/
+        if (userV) {
             int size;
             storMode = null;
-            File file = new File(directory +"/"+ userInput[2]);
+            File file = new File(directory + "/" + userInput[2]);
             File directoryF = new File(directory);
-            switch (userInput[1].toUpperCase()){
+            switch (userInput[1].toUpperCase()) {
                 case "NEW":
-                    if (file.isFile()){
+                    if (file.isFile()) {
                         storMode = "NEW";
                         sendToClient("+File exists, will create new generation of file");
                     } else {
@@ -466,7 +461,7 @@ public class TCPServerInstance{
                     }
                     break;
                 case "OLD":
-                    if (file.isFile()){
+                    if (file.isFile()) {
                         storMode = "OLD";
                         sendToClient("+Will write over old file");
                     } else {
@@ -475,7 +470,7 @@ public class TCPServerInstance{
                     }
                     break;
                 case "APP":
-                    if (file.isFile()){
+                    if (file.isFile()) {
                         storMode = "APP";
                         sendToClient("+Will append to file");
                     } else {
@@ -489,7 +484,7 @@ public class TCPServerInstance{
             }
             //Client will then send back the size of the file
             String[] resp = readFromClient(inFromClient).split(" ");
-            
+
             while (true) {
                 if (null == resp[0]) {
                     sendToClient("-Invalid Client Response. Awaiting SIZE <number-of-bytes-in-file>. Send STOP to stop transfer.");
@@ -513,68 +508,67 @@ public class TCPServerInstance{
                 }
             }
             //If STOR mode selected is NEW, create new extension to add to file name based on date
-            if(Objects.equals(storMode, "NEW")){
+            if (Objects.equals(storMode, "NEW")) {
                 SimpleDateFormat dateFor = new SimpleDateFormat("yyyyMMddHHmmss");
                 String[] directoryFS = file.toString().split("\\.", 2);
-                file = new File(directoryFS[0]+"-"+dateFor.format(new Date())+"."+directoryFS[1]);
+                file = new File(directoryFS[0] + "-" + dateFor.format(new Date()) + "." + directoryFS[1]);
             }
             newFileS = file.toString();
             fileIntake(size);
         } else {
             sendToClient("-Not found because: unauthorised, please sign in");
         }
-
-
+        
     }
 
     /*If send type selected is correct, file will be created on server side
-    * with the name of the original file of new file name.
-    * If incorrect type selected, user will be told to change type*/
+     * with the name of the original file of new file name.
+     * If incorrect type selected, user will be told to change type*/
     private void fileIntake(int size) throws IOException {
         File file = new File(newFileS);
-            if (Objects.equals(sendType, "A")) {
-                BufferedOutputStream bufferedStream = new BufferedOutputStream(new FileOutputStream(file, "APP".equals(storMode)));
-                for (int i = 0; i < size; i++) {
-                    bufferedStream.write(inFromClient.read());
-                }
-                sendToClient("+Saved " + file);
-            } else if (Objects.equals(sendType, "B")) {
-                int e;
-                int i = 0;
-                byte[] bytes = new byte[(int) size];
-                FileOutputStream fileOutputStream = new FileOutputStream(file, "APP".equals(storMode));
-                while (i < size) {
-                    e = binFromClient.read(bytes);
-                    fileOutputStream.write(bytes, 0, e);
-                    i += e;
-                }
-                fileOutputStream.flush();
-                fileOutputStream.close();
-                sendToClient("+Saved " + file);
+        if (Objects.equals(sendType, "A")) {
+            BufferedOutputStream bufferedStream = new BufferedOutputStream(new FileOutputStream(file, "APP".equals(storMode)));
+            for (int i = 0; i < size; i++) {
+                bufferedStream.write(inFromClient.read());
             }
-            sendToClient("Incorrect send mode");
+            sendToClient("+Saved " + file);
+        } else if (Objects.equals(sendType, "B")) {
+            int e;
+            int i = 0;
+            byte[] bytes = new byte[(int) size];
+            FileOutputStream fileOutputStream = new FileOutputStream(file, "APP".equals(storMode));
+            while (i < size) {
+                e = binFromClient.read(bytes);
+                fileOutputStream.write(bytes, 0, e);
+                i += e;
+            }
+            fileOutputStream.flush();
+            fileOutputStream.close();
+            sendToClient("+Saved " + file);
+        }
+        else sendToClient("Incorrect send mode");
     }
-    
+
     //Function for checking if a selected file is of binary type
     private boolean isBinary(File file) throws IOException {
         FileInputStream in;
         in = new FileInputStream(file);
         int size = in.available();
-        if(size > 64) size = 64;
+        if (size > 64) size = 64;
         byte[] data = new byte[size];
         in.read(data);
         in.close();
 
         int ascii = 0;
         int binary = 0;
-        
+
         //iterate through bytes
         for (byte b : data) {
             //if byte is of binary type, return true
             if (b < 0x09) {
                 return true;
             }
-            
+
             //if ascii symbol exists, add to ascii counter
             if (b == 0x09 || b == 0x0A || b == 0x0C || b == 0x0D) {
                 ascii++;
@@ -584,24 +578,24 @@ public class TCPServerInstance{
                 binary++;
             }
         }
-        
-        if( binary == 0 ) return false;
+
+        if (binary == 0) return false;
 
         return 100 * binary / (ascii + binary) > 95;
-        
+
     }
-    
+
     //method of outputting to client by appending \0 on end of line
     private void sendToClient(String message) throws IOException {
         outToClient.writeBytes(message + "\0");
     }
-    
+
     /*method of reading from client by reading char by char and checking if \0 has come as the end of line
-    * If end of line reached but not end of input keep reading*/
+     * If end of line reached but not end of input keep reading*/
     private static String readFromClient(BufferedReader inFromClient) throws IOException {
         StringBuilder text = new StringBuilder();
         var character = 0;
-        while (true){
+        while (true) {
             character = inFromClient.read();
             if ((char) character == '\0' && text.length() > 0) {
                 break;
