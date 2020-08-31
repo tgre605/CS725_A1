@@ -4,9 +4,9 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.*;
 import java.nio.file.attribute.FileOwnerAttributeView;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 
 public class TCPServerInstance{
     private final Socket socket;
@@ -39,16 +39,19 @@ public class TCPServerInstance{
     TCPServerInstance(Socket socket){
         this.socket = socket;
     }
-    public void runInstance() throws Exception {
+    public boolean runInstance() throws Exception {
+        //initialise ascii/binary inputs/outputs
         inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outToClient = new DataOutputStream(socket.getOutputStream());
         binToClient = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         binFromClient = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         new File(ftp.toString()).mkdirs();
+        
         while (running){
+            //Read client input and send input to mode function unless DONE is received
             String clientInputS = readFromClient(inFromClient);
             String[] clientInput = clientInputS.split(" ");
-            if (clientInput[0].equals("DONE")) {
+            if (clientInput[0].toUpperCase().equals("DONE")) {
                 sendToClient("+(the message may be charge/accounting info)");
                 running = false;
                 socket.close();
@@ -56,67 +59,57 @@ public class TCPServerInstance{
             } else {
                 mode(clientInput);
             }
-
         }
+        return false;
     }
 
+    //send input argument to correct function depending on argument
     public void mode(String[] modeArgs) throws Exception {
-        switch (modeArgs[0].toUpperCase()){
-            case "USER":
-                sendToClient(user(modeArgs[1]));
-                break;
-            case "ACCT":
-                sendToClient(acct(modeArgs[1]));
-                break;
-            case "PASS":
-                sendToClient(pass(modeArgs[1]));
-                break;
-            case "TYPE":
-                type(modeArgs[1]);
-                break;
-            case "LIST":
-                sendToClient(list(modeArgs[1]));
-                break;
-            case "CDIR":
-                sendToClient(cdir(modeArgs[1]));
-                break;
-            case "KILL":
-                sendToClient(kill(modeArgs[1]));
-                break;
-            case "NAME":
-                sendToClient(name(modeArgs[1]));
-                break;
-            case "TOBE":
-                sendToClient(tobe(modeArgs[1]));
-                break;
-            case "SEND":
-                sendToClient(send());
-                break;
-            case "RETR":
-                sendToClient(retr(modeArgs[1]));
-                break;
-            case "STOP":
+        switch (modeArgs[0].toUpperCase()) {
+            case "USER" -> sendToClient(user(modeArgs[1]));
+            case "ACCT" -> sendToClient(acct(modeArgs[1]));
+            case "PASS" -> sendToClient(pass(modeArgs[1]));
+            case "TYPE" -> type(modeArgs[1]);
+            case "LIST" -> sendToClient(list(modeArgs[1]));
+            case "CDIR" -> sendToClient(cdir(modeArgs[1]));
+            case "KILL" -> sendToClient(kill(modeArgs[1]));
+            case "NAME" -> sendToClient(name(modeArgs[1]));
+            case "TOBE" -> sendToClient(tobe(modeArgs[1]));
+            case "SEND" -> {
+                //if send command is received, depending on if RETR has been called, execute send
+                int resp = send();
+                if(resp == 0){
+                }else if(resp == 1) {
+                    sendToClient("No file selected");
+                } else {
+                    sendToClient("-Not found because: unauthorised, please sign in");
+                }
+            }
+            case "RETR" -> sendToClient(retr(modeArgs[1]));
+            case "STOP" -> {
+                //if RETR has been called and then stopped, reset variables that allow send
                 fileToRetr = null;
                 retrV = false;
                 sendToClient("+ok, RETR aborted");
-                break;
-            case "STOR":
-                stor(modeArgs);
-                break;
-            default:
-                sendToClient("-invalid Command");
-                break;
+            }
+            case "STOR" -> stor(modeArgs);
+            default -> sendToClient("-invalid Command");
         }
     }
 
 
     public String user(String userInput) throws Exception {
-        Boolean userExists = false;
+        boolean userExists = false;
         String[] lineAccounts = null;
         String linePassword = null;
 
+        //read in file containing authentication details
         File authFile = new File("src/Server/authFile.txt");
 
+        /*Read each line of auth file. If user matches user in auth file
+        * save username, account and password to local variables.
+        * If no account/password exists, assume verified user
+        * if no matching user, tell client invalid input */
         BufferedReader reader = new BufferedReader(new FileReader(authFile));
         String line = reader.readLine();
         while (line != null)
@@ -161,6 +154,7 @@ public class TCPServerInstance{
         }
         userV = true;
         user = userInput;
+        //If password/account exists, ask user to send password/account to be verified
         if(passwordV && accountV){
             return "!" + userInput + " logged in";
         } else {
@@ -173,8 +167,10 @@ public class TCPServerInstance{
             }
         }
     }
-
+    
     public String acct(String userInput) {
+        /*If user exists, check account input if matches an account for that user
+        * if matching, set variable account to user input*/
         if(userV){
             for (String accountTest : accounts) {
                 if(userInput.equals(accountTest)){
@@ -184,6 +180,8 @@ public class TCPServerInstance{
                 }
             }
         }
+        /*If attempting to change directory without being logged in
+        * required log in to account, then immediately change directory*/
         if(passwordV && accountV){
             if(cDirA){
                 String dir = changeDir();
@@ -200,12 +198,16 @@ public class TCPServerInstance{
 
     public String pass(String userInput) {
         if(userV){
+            //if user doesnt have password, set verified password to true
             if(password == null){
                 passwordV = true;
             }
+            //if user input matches expected password, set verified password to true
             if(userInput.equals(password)){
                 passwordV = true;
             }
+            /*If attempting to change directory without being logged in
+             * required log in to password, then immediately change directory*/
             if(accountV && passwordV){
                 if(cDirP){
                     String dir = changeDir();
@@ -221,25 +223,26 @@ public class TCPServerInstance{
     }
 
     public void type(String userInput) throws Exception {
-        switch (userInput){
-            case "A":
+        //depending on user input, change made to ascii or binary for sending and receiving files
+        switch (userInput) {
+            case "A" -> {
                 sendType = "A";
                 sendToClient("+Using Ascii");
-                break;
-            case "B":
+            }
+            case "B" -> {
                 sendType = "B";
                 sendToClient("+Using Binary");
-                break;
-            case "C":
+            }
+            case "C" -> {
                 sendType = "C";
                 sendToClient("+Using Continuous");
-                break;
-            default:
-                sendToClient("-Type not valid");
+            }
+            default -> sendToClient("-Type not valid");
         }
     }
 
     public String list(String userInput) throws Exception {
+        //if user send LIST F, only print file/directoy names on new lines
         if(userV) {
             if ("F".equals(userInput)) {
                 StringBuilder response;
@@ -250,6 +253,7 @@ public class TCPServerInstance{
                 }
                 return response.toString();
             }
+            //if user sends LIST V, print file/directory name, size, date of last modification and owner
             if ("V".equals(userInput)) {
                 StringBuilder response;
                 DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(directory));
@@ -270,12 +274,14 @@ public class TCPServerInstance{
     }
 
     public String cdir(String userInput) {
+        /*given correct input of real directory, change global vairable directory
+        * to new directory name if user is logged in correctly */
         String cdDirectory = "src/Server/"+userInput;
         if(userV && passwordV && accountV){
             directoryTemp = cdDirectory;
             return changeDir();
         }
-
+        //if use is not logged in, ask for password/account and immediately change directory if entered correctly
         if(userV){
             cdDirectory = "src/Server/"+userInput;
             File file = new File(cdDirectory);
@@ -301,6 +307,7 @@ public class TCPServerInstance{
         return "-Can't connect to directory because: unauthorised, please sign in";
     }
 
+    //function for changing directory variable if directory exists
     private String changeDir() {
         File file = new File(directoryTemp);
         if (!file.isDirectory()){
@@ -311,6 +318,7 @@ public class TCPServerInstance{
         return "!Changed working dir to " + directory;
     }
 
+    //if user is logged in, will deleted file if it exists in current directory
     public String kill(String userInput) throws Exception{
         if(userV){
             Path pathToFile = new File(directory+ "/" + userInput).toPath();
@@ -323,7 +331,9 @@ public class TCPServerInstance{
         }
         else return "-Not deleted because: unauthorised, please sign in";
     }
-
+    
+    /*Checks to see if file exists in directory and if it does, set global variable
+    * that shows that file exists. Set path to file that can be user in TOBE function */
     public String name(String userInput) {
         if(userV){
             Path pathToOldFileTemp = new File(directory+ "/" + userInput).toPath();
@@ -338,6 +348,8 @@ public class TCPServerInstance{
         else return "-Not found because: unauthorised, please sign in";
     }
 
+    /*If NAME has been called correctly, user can input a desired name for the file.
+    * If that name is not taken, it will be renamed*/
     public String tobe(String userInput) {
         if(userV && fileExists){
             Path newFileName = new File(directory+ "/" + userInput).toPath();
@@ -345,9 +357,10 @@ public class TCPServerInstance{
                 return "-File wasn't renamed because file already exists";
             }
             File oldFile = new File(String.valueOf(pathToOldfile));
-            oldFile.renameTo(new File(directory+ "/" + userInput));
+            String fileType = oldFile.toString().split("\\.")[1];
+            oldFile.renameTo(new File(directory+ "/" + userInput+"."+fileType));
             fileExists = false;
-            String response = "+"+existingFile+" renamed to " + userInput;
+            String response = "+"+existingFile+" renamed to " + userInput+"."+fileType;
             this.existingFile = null;
             this.pathToOldfile = null;
             return response;
@@ -359,17 +372,21 @@ public class TCPServerInstance{
 
     }
 
+    /* Given user input of file they want to retrieve, server will check
+    * if file exists and if correct send type has been selected
+    * If incorrect type, tell client to change mode
+    * if correct type, set global value for file server will send in SEND command*/
     public String retr(String userInput) throws IOException {
         if(userV){
             Path pathToFileTemp = new File(directory+ "/" + userInput).toPath();
             if(Files.exists(pathToFileTemp)){
                 boolean binary = isBinary(new File(pathToFileTemp.toString()));
                 if(binary){
-                    if(sendType == "C" || sendType == "B"){
+                    if(Objects.equals(sendType, "C") || Objects.equals(sendType, "B")){
                     }else return "-Incorrect type selected";
-                    
+
                 }
-                if(!binary && sendType != "A"){
+                if(!binary && !Objects.equals(sendType, "A")){
                     return "-Incorrect type selected";
                 }
                 long fileSize = new File(String.valueOf(pathToFileTemp)).length();
@@ -381,24 +398,20 @@ public class TCPServerInstance{
         }
         else return "-Not found because: unauthorised, please sign in";
     }
-
-    public String send() throws Exception {
+    
+    /*If RETR has been used correctly, file to retrieve will be set and global boolean
+    * retrV will be set telling server it is ok to execute send command.*/
+    public int send() throws Exception {
         if (userV && retrV) {
             Path pathToFile = new File(directory + "/" + fileToRetr).toPath();
             File file = new File(String.valueOf(pathToFile));
             byte[] bytes = new byte[(int) file.length()];
             fileToRetr = null;
-            if (sendType == "A") {
-                BufferedInputStream bufferedStream = new BufferedInputStream(new FileInputStream(file));
-                outToClient.flush();
-                int p;
-                while ((p = bufferedStream.read(bytes)) >= 0) {
-                    outToClient.write(bytes, 0, p);
-                }
-                bufferedStream.close();
-                outToClient.flush();
-                retrV = false;
+            //If file is ascii type, use method bufStream
+            if (Objects.equals(sendType, "A")) {
+                bufStream(file, bytes, outToClient);
             } else {
+                //if file is binary type, read in via FileInputStream and send byte by byte
                 FileInputStream fileStream = new FileInputStream(file);
                 int c;
                 while ((c = fileStream.read()) >= 0) {
@@ -406,159 +419,197 @@ public class TCPServerInstance{
                 }
                 fileStream.close();
                 binToClient.flush();
-                retrV = false;
             }
-            if (userV) {
-                return "No file selected";
-            } 
+            //set global variable fro retrV to false so RETR will have to be called again before SEND
+            retrV = false;
+            return 0;
+        } else if (userV) {
+            return 1;
         }
-        return "-Not found because: unauthorised, please sign in";
+        return 2;
+    }
+    
+    //if file is Ascii type, use BufferedInputStream to read in file and send byte by byte
+    public static void bufStream(File file, byte[] bytes, DataOutputStream outToClient) throws IOException {
+        BufferedInputStream bufferedStream = new BufferedInputStream(new FileInputStream(file));
+        outToClient.flush();
+        int p;
+        while ((p = bufferedStream.read(bytes)) > 0) {
+            outToClient.write(bytes, 0, p);
+        }
+        bufferedStream.close();
+        outToClient.flush();
     }
 
 
-
-        public void stor(String[] userInput) throws Exception{
-            if(userInput.length != 3){
-                sendToClient("-Invalid input");
-                return;
-            }
-            if(userV){
-                int size;
-                storMode = null;
-                File file = new File(directory +"/"+ userInput[2]);
-                File directoryF = new File(directory);
-                switch (userInput[1]){
-                    case "NEW":
-                        if (file.isFile()){
-                            storMode = "NEW";
-                            sendToClient("+File exists, will create new generation of file");
-                        } else {
-                            storMode = "NEWC";
-                            sendToClient("+File does not exist, will create new file");
-                        }
-                        break;
-                    case "OLD":
-                        if (file.isFile()){
-                            storMode = "OLD";
-                            sendToClient("+Will write over old file");
-                        } else {
-                            storMode = "NEWC";
-                            sendToClient("+Will create new file");
-                        }
-                        break;
-                    case "APP":
-                        if (file.isFile()){
-                            storMode = "APP";
-                            sendToClient("+Will append to file");
-                        } else {
-                            storMode = "NEWC";
-                            sendToClient("+Will create file");
-                        }
-                        break;
-                    default:
-                        sendToClient("-Invalid request");
-                        return;
-                }
-                String[] resp = readFromClient(inFromClient).split(" ");
-
-                A: while (true) {
-                    if (null == resp[0]) {
-                        sendToClient("-Invalid Client Response. Awaiting SIZE <number-of-bytes-in-file>. Send STOP to stop transfer.");
+    public void stor(String[] userInput) throws Exception{
+        if(userInput.length != 3){
+            sendToClient("-Invalid input");
+            return;
+        }
+        /*If user has input 3 argument for STOR command, check second argument to see how
+        * they want the file stored via a switch case
+        * If invalid STOR mode, send invalid to client*/
+        if(userV){
+            int size;
+            storMode = null;
+            File file = new File(directory +"/"+ userInput[2]);
+            File directoryF = new File(directory);
+            switch (userInput[1].toUpperCase()){
+                case "NEW":
+                    if (file.isFile()){
+                        storMode = "NEW";
+                        sendToClient("+File exists, will create new generation of file");
                     } else {
-                        if(resp[0].equals("SIZE")){
-                            size = Integer.parseInt(resp[1]);
-                            if (directoryF.getFreeSpace() > size){
-                                sendToClient("+ok, waiting for file");
-                                break A;
-                            } else {
-                                sendToClient("-Couldn't save because not enough free space");
-                                return;
-                            }
+                        storMode = "NEWC";
+                        sendToClient("+File does not exist, will create new file");
+                    }
+                    break;
+                case "OLD":
+                    if (file.isFile()){
+                        storMode = "OLD";
+                        sendToClient("+Will write over old file");
+                    } else {
+                        storMode = "NEWC";
+                        sendToClient("+Will create new file");
+                    }
+                    break;
+                case "APP":
+                    if (file.isFile()){
+                        storMode = "APP";
+                        sendToClient("+Will append to file");
+                    } else {
+                        storMode = "NEWC";
+                        sendToClient("+Will create file");
+                    }
+                    break;
+                default:
+                    sendToClient("-Invalid request");
+                    return;
+            }
+            //Client will then send back the size of the file
+            String[] resp = readFromClient(inFromClient).split(" ");
+            
+            while (true) {
+                if (null == resp[0]) {
+                    sendToClient("-Invalid Client Response. Awaiting SIZE <number-of-bytes-in-file>. Send STOP to stop transfer.");
+                } else {
+                    if (resp[0].equals("SIZE")) {
+                        size = Integer.parseInt(resp[1]);
+                        //if enough free space, tell client ok to send file
+                        if (directoryF.getFreeSpace() > size) {
+                            sendToClient("+ok, waiting for file");
+                            break;
                         } else {
-                            sendToClient("-Invalid input, STOR aborted");
-                            storMode = null;
+                            sendToClient("-Couldn't save because not enough free space");
                             return;
                         }
-
+                    } else {
+                        sendToClient("-Invalid input, STOR aborted");
+                        storMode = null;
+                        return;
                     }
+
                 }
-                if(storMode == "NEW"){
-                    SimpleDateFormat dateFor = new SimpleDateFormat("yyyyMMddHHmmss");
-                    String[] directoryFS = file.toString().split("\\.", 2);
-                    file = new File(directoryFS[0]+"-"+dateFor.format(new Date())+directoryFS[1]);
-                    newFileS = file.toString();
-                } else {
-                    newFileS = file.toString();
-                }
-                fileIntake(size);
-            } else {
-                sendToClient("-Not found because: unauthorised, please sign in");
             }
+            //If STOR mode selected is NEW, create new extension to add to file name based on date
+            if(Objects.equals(storMode, "NEW")){
+                SimpleDateFormat dateFor = new SimpleDateFormat("yyyyMMddHHmmss");
+                String[] directoryFS = file.toString().split("\\.", 2);
+                file = new File(directoryFS[0]+"-"+dateFor.format(new Date())+"."+directoryFS[1]);
+            }
+            newFileS = file.toString();
+            fileIntake(size);
+        } else {
+            sendToClient("-Not found because: unauthorised, please sign in");
+        }
 
 
-        }
-
-        private void fileIntake(int size) throws IOException {
-            File file = new File(newFileS);
-            try {
-                if (sendType == "A") {
-                    BufferedOutputStream bufferedStream = new BufferedOutputStream(new FileOutputStream(file, "APP".equals(storMode)));
-                    for (int i = 0; i < size; i++) {
-                        bufferedStream.write(inFromClient.read());
-                    }
-                    sendToClient("+Saved " + file);
-                } else if (sendType == "B") {
-                    int e;
-                    int i = 0;
-                    byte[] bytes = new byte[(int) size];
-                    FileOutputStream fileOutputStream = new FileOutputStream(file, "APP".equals(storMode));
-                    while (i < size) {
-                        e = binFromClient.read(bytes);
-                        fileOutputStream.write(bytes, 0, e);
-                        i += e;
-                    }
-                    fileOutputStream.flush();
-                    fileOutputStream.close();
-                    sendToClient("+Saved " + file);
-                }
-            } catch (Exception e){
-                sendToClient("Incorrect send mode");
-            }
-        }
-        private boolean isBinary(File file) throws IOException {
-            FileInputStream in;
-            in = new FileInputStream(file);
-            boolean result = false;
-            int c;
-            while ((c = in.read()) >= 0) {
-                if (c == 10 || c == 11 || c == 13 || (c >= 32 && c <= 126)) {
-                    result = true;
-                } else if(c == 153 || c >= 160 && c <= 255){
-                    result = true;
-                } else if (c == 884 || c == 885 || c == 890 || c == 894 || c >= 900 && c <= 974 ) {
-                    result = true;
-                } else {
-                    result=false;
-                    break;
-                }
-            }
-            return result;
-        }
-        private void sendToClient(String message) throws IOException {
-            outToClient.writeBytes(message + "\0");
-        }
-        private static String readFromClient(BufferedReader inFromClient) throws IOException {
-            StringBuilder text = new StringBuilder();
-            var character = 0;
-            while (true){
-                character = inFromClient.read();
-                if ((char) character == '\0' && text.length() > 0) {
-                    break;
-                }
-                if ((char) character != '\0') {
-                    text.append((char) character);
-                }
-            }
-            return text.toString();
-        }
     }
+
+    /*If send type selected is correct, file will be created on server side
+    * with the name of the original file of new file name.
+    * If incorrect type selected, user will be told to change type*/
+    private void fileIntake(int size) throws IOException {
+        File file = new File(newFileS);
+            if (Objects.equals(sendType, "A")) {
+                BufferedOutputStream bufferedStream = new BufferedOutputStream(new FileOutputStream(file, "APP".equals(storMode)));
+                for (int i = 0; i < size; i++) {
+                    bufferedStream.write(inFromClient.read());
+                }
+                sendToClient("+Saved " + file);
+            } else if (Objects.equals(sendType, "B")) {
+                int e;
+                int i = 0;
+                byte[] bytes = new byte[(int) size];
+                FileOutputStream fileOutputStream = new FileOutputStream(file, "APP".equals(storMode));
+                while (i < size) {
+                    e = binFromClient.read(bytes);
+                    fileOutputStream.write(bytes, 0, e);
+                    i += e;
+                }
+                fileOutputStream.flush();
+                fileOutputStream.close();
+                sendToClient("+Saved " + file);
+            }
+            sendToClient("Incorrect send mode");
+    }
+    
+    //Function for checking if a selected file is of binary type
+    private boolean isBinary(File file) throws IOException {
+        FileInputStream in;
+        in = new FileInputStream(file);
+        int size = in.available();
+        if(size > 64) size = 64;
+        byte[] data = new byte[size];
+        in.read(data);
+        in.close();
+
+        int ascii = 0;
+        int binary = 0;
+        
+        //iterate through bytes
+        for (byte b : data) {
+            //if byte is of binary type, return true
+            if (b < 0x09) {
+                return true;
+            }
+            
+            //if ascii symbol exists, add to ascii counter
+            if (b == 0x09 || b == 0x0A || b == 0x0C || b == 0x0D) {
+                ascii++;
+            } else if (b >= 0x20 && b <= 0x7E) {
+                ascii++;
+            } else {
+                binary++;
+            }
+        }
+        
+        if( binary == 0 ) return false;
+
+        return 100 * binary / (ascii + binary) > 95;
+        
+    }
+    
+    //method of outputting to client by appending \0 on end of line
+    private void sendToClient(String message) throws IOException {
+        outToClient.writeBytes(message + "\0");
+    }
+    
+    /*method of reading from client by reading char by char and checking if \0 has come as the end of line
+    * If end of line reached but not end of input keep reading*/
+    private static String readFromClient(BufferedReader inFromClient) throws IOException {
+        StringBuilder text = new StringBuilder();
+        var character = 0;
+        while (true){
+            character = inFromClient.read();
+            if ((char) character == '\0' && text.length() > 0) {
+                break;
+            }
+            if ((char) character != '\0') {
+                text.append((char) character);
+            }
+        }
+        return text.toString();
+    }
+}

@@ -18,8 +18,9 @@ class TCPServerInstanceTest {
     void user() throws Exception {
         Socket socket = new Socket();
         TCPServerInstance test = new TCPServerInstance(socket);
-        String reply = "!test4 logged in" + "\n";
-        assertEquals(test.user("test4"), reply);
+        assertEquals(test.user("test4"), "!test4 logged in");
+        TCPServerInstance test2 = new TCPServerInstance(socket);
+        assertEquals(test2.user("userID"), "+User-id valid, send account and password");
     }
 
     @Test
