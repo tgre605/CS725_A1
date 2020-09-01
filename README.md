@@ -7,7 +7,7 @@
     3. [Authentication file](#authentication-file)
 2. [How to setup TCPServer and run](#how-to-setup-TCPServer)
 3. [How to setup TCPClient and run](#how-to-setup-TCPClient)
-4. [Command Guide](#command-guide)
+4. [Tests](#command-guide)
     1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
     2. [TYPE Command](#type-command)
     3. [LIST Command](#list-command)
@@ -17,10 +17,6 @@
     7. [DONE Command](#done-command)
     8. [RETR Command](#retr-command)
     9. [STOR Command](#stor-command)
-7. [Test](#test-cases)
-    1. [Example 1](#example-1)
-    2. [Example 2](#example-2)
-    3. [Example 3](#example-3)
     
 ## List of Components
 
@@ -40,4 +36,18 @@ This file holds the authentication data for logging into the server. The data fo
    user5 account5a,account5b password5
    //Take note of spaces after user2 with an account and no password, and user3 with a password and no account
    ```
+   
+## How to set up TCPServer and Run
+Open terminal and navigate to CS725_A1/src directory
 
+Enter: javac ./Server/*.java
+
+Followed by: java Server.TCPServer
+
+## How to set up TCPClient and run
+Server must be running first following instructions above
+Open terminal and navigate to CS725_A1/src directory
+
+Enter: javac ./Client/TCPClient.java
+
+Followed by: java Client.TCPClient
