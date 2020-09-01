@@ -3,7 +3,7 @@ package Client;
 import Server.TCPServerInstance;
 
 import java.io.*;
-import java.net.*;
+import java.net.Socket;
 import java.nio.file.FileSystems;
 import java.util.Objects;
 
@@ -321,7 +321,7 @@ class TCPClient {
      * If end of line reached but not end of input keep reading*/
     private static String readFromServer(BufferedReader inFromServer) throws IOException {
         StringBuilder text = new StringBuilder();
-        int character = 0;
+        int character;
         while (true){
             character = inFromServer.read();
             if ((char) character == '\0' && text.length() > 0) {
