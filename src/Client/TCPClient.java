@@ -13,7 +13,7 @@ class TCPClient {
     static DataOutputStream binToServer;
     static DataInputStream binFromServer;
     static String sentence;
-    static File ftp = FileSystems.getDefault().getPath("client/sftp/").toFile().getAbsoluteFile();
+    static File ftp = FileSystems.getDefault().getPath("Client/sftp/").toFile().getAbsoluteFile();
     private static String sendType;
     private static boolean dontRead;
     private static boolean running;
