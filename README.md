@@ -8,15 +8,17 @@
 2. [How to setup TCPServer and run](#How-to-set-up-TCPServer-and-Run)
 3. [How to setup TCPClient and run](#How-to-set-up-TCPClient-and-Run)
 4. [Tests](#command-guide)
-    1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
-    2. [TYPE Command](#type-command)
-    3. [LIST Command](#list-command)
-    4. [CDIR Command](#cdir-command)
-    5. [KILL Command](#kill-command)
-    6. [NAME Command](#name-command)
-    7. [DONE Command](#done-command)
-    8. [RETR Command](#retr-command)
-    9. [STOR Command](#stor-command)
+    1. [USER Command](#user-command)
+    2. [PASS Command](#user-command)
+    3. [ACCT Command](#pass-command)
+    4. [TYPE Command](#type-command)
+    5. [LIST Command](#list-command)
+    6. [CDIR Command](#cdir-command)
+    7. [KILL Command](#kill-command)
+    8. [NAME Command](#name-command)
+    9. [DONE Command](#done-command)
+    10. [RETR Command](#retr-command)
+    11. [STOR Command](#stor-command)
     
 ## List of Components
 
@@ -51,3 +53,58 @@ Open terminal and navigate to CS725_A1/src directory
 Enter: javac ./Client/TCPClient.java
 
 Followed by: java Client.TCPClient
+
+## Tests
+The following gives examples of how the system should operate depending on input from the user
+
+### USER
+Attempting to sign in to a user should result in the following:
+    USER userID
+    FROM SERVER: +User-id valid, send account and password
+    
+If no password or account, it will skip straight to logged in.
+If password or account is expected the following should print:
+    USER userID
+    FROM SERVER: +User-id valid, send account and password
+
+If unknown user entered, the following should print:
+    USER notExist
+    FROM SERVER: Invalid Username
+
+### PASS
+If user has been entered and has a password associated with it, after entering password, the following should print:
+    PASS password1
+    FROM SERVER: + Password ok, send account
+
+If no account is expected, will skill straight to logged in
+
+### PASS
+If user has been entered and has a password associated with it, after entering password, the following should print:
+    ACCT account1
+    FROM SERVER: +Account valid, send password
+
+If no password is expected, will skill straight to logged in
+
+### TYPE
+TYPE must be followed by an A, B or C. If this is input correctly, the following will print:
+    TYPE B
+    FROM SERVER: +Using Binary
+If input incorrectly, the following will print:
+    TYPE D
+    FROM SERVER: -Type not valid
+
+The following commands can only be used after the user has logged in successfully. If user send invalid input, server will respond with negative response saying invalid input
+
+### List
+LIST must be followed by F or V. If this is input correctly, the following will print
+If LIST F, only the file/directory names of the current directory will print for example:
+    LIST F
+    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
+    test1-20200901150929.png
+    testing.png
+    
+If LIST V, extra details of each file will be printed:
+    LIST V
+    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
+    test1-20200901150929.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 15:09:29 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
