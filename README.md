@@ -44,6 +44,8 @@ This file holds the authentication data for logging into the server. The data fo
    ```
    
 ## How to set up TCPServer and Run
+Ensure running Java 8 or newer
+
 Open terminal and navigate to CS725_A1/src directory
 
 Enter: javac ./Server/*.java
@@ -51,6 +53,8 @@ Enter: javac ./Server/*.java
 Followed by: java Server.TCPServer
 
 ## How to set up TCPClient and run
+Ensure running Java 8 or newer
+
 Server must be running first following instructions above
 Open terminal and navigate to CS725_A1/src directory
 
