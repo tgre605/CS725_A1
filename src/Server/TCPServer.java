@@ -1,15 +1,11 @@
-package Server; /**
- * Code is taken from Computer Networking: A Top-Down Approach Featuring 
- * the Internet, second edition, copyright 1996-2002 J.F Kurose and K.W. Ross, 
- * All Rights Reserved.
- **/
+package Server;
 
-import java.io.*; 
-import java.net.*; 
+import java.net.ServerSocket;
+import java.net.Socket;
 
 class TCPServer { 
     
-    public static void main(String argv[]) throws Exception 
+    public static void main(String[] argv) throws Exception 
     {
 	/*connects to welcome socket and receives connection socket from server
 	*This socket is then used to instantiate a new TCPServerInstance where all
