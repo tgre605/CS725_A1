@@ -5,6 +5,7 @@ import Server.TCPServerInstance;
 import java.io.*;
 import java.net.*;
 import java.nio.file.FileSystems;
+import java.util.Objects;
 
 class TCPClient {
     static DataOutputStream outToServer;
@@ -12,7 +13,7 @@ class TCPClient {
     static DataOutputStream binToServer;
     static DataInputStream binFromServer;
     static String sentence;
-    static File ftp = FileSystems.getDefault().getPath("src/client/sftp/").toFile().getAbsoluteFile();
+    static File ftp = FileSystems.getDefault().getPath("client/sftp/").toFile().getAbsoluteFile();
     private static String sendType;
     private static boolean dontRead;
     private static boolean running;
@@ -70,6 +71,7 @@ class TCPClient {
             case "STOP" -> {
                 fileToRetr = null;
                 size = 0;
+                sendToServer(sentence);
             }
             case "RETR" -> retr();
             case "STOR" -> stor();
@@ -223,6 +225,7 @@ class TCPClient {
     }
     
     public static void stor() throws Exception {
+
         String[] userInput = sentence.split(" ");
         File file = null;
         //if input arguments are correct, check if file exists
@@ -230,6 +233,21 @@ class TCPClient {
             file = new File(ftp.getPath() + "/" + userInput[2]);
             if (!file.isFile()) {
                 System.out.println("-File does not exist");
+                dontRead = true;
+                return;
+            }
+            boolean binary = isBinary(new File(file.toString()));
+            if (binary) {
+                if (Objects.equals(sendType, "C") || Objects.equals(sendType, "B")) {
+                } else {
+                    System.out.println("-Incorrect type selected");
+                    dontRead = true;
+                    return;
+                }
+
+            }
+            if (!binary && !Objects.equals(sendType, "A")) {
+                System.out.println("-Incorrect type selected");
                 dontRead = true;
                 return;
             }
@@ -280,4 +298,40 @@ class TCPClient {
         outToServer.writeBytes(message + "\0");
     }
 
+    //Function for checking if a selected file is of binary type
+    private static boolean isBinary(File file) throws IOException {
+        FileInputStream in;
+        in = new FileInputStream(file);
+        int size = in.available();
+        if (size > 64) size = 64;
+        byte[] data = new byte[size];
+        in.read(data);
+        in.close();
+
+        int ascii = 0;
+        int binary = 0;
+
+        //iterate through bytes
+        for (byte b : data) {
+            //if byte is of binary type, return true
+            if (b < 0x09) {
+                return true;
+            }
+
+            //if ascii symbol exists, add to ascii counter
+            if (b == 0x09 || b == 0x0A || b == 0x0C || b == 0x0D) {
+                ascii++;
+            } else if (b >= 0x20 && b <= 0x7E) {
+                ascii++;
+            } else {
+                binary++;
+            }
+        }
+
+        if (binary == 0) return false;
+
+        return 100 * binary / (ascii + binary) > 95;
+
+    }
+    
 } 

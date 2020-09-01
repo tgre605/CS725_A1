@@ -15,7 +15,9 @@ public class TCPServerInstance {
     private Boolean accountV = false;
     private Boolean passwordV = false;
     private Boolean fileExists = false;
-    static File ftp = FileSystems.getDefault().getPath("src/Server/sftp/").toFile().getAbsoluteFile();
+    Path currentRelativePath = Paths.get("");
+    private final String root = currentRelativePath.toAbsolutePath().toString();
+    static File ftp = FileSystems.getDefault().getPath("Server/sftp/").toFile().getAbsoluteFile();
     private String sendType;
     String[] accounts;
     String user;
@@ -23,7 +25,7 @@ public class TCPServerInstance {
     String account;
     BufferedReader inFromClient;
     DataOutputStream outToClient;
-    private String directory = "";
+    private String directory = root + "/Server";
     private Path pathToOldfile;
     private String existingFile;
     private boolean retrV;
@@ -36,7 +38,7 @@ public class TCPServerInstance {
     private DataOutputStream binToClient;
     private DataInputStream binFromClient;
 
-    TCPServerInstance(Socket socket) {
+    public TCPServerInstance(Socket socket) {
         this.socket = socket;
     }
 
@@ -53,7 +55,7 @@ public class TCPServerInstance {
             String clientInputS = readFromClient(inFromClient);
             String[] clientInput = clientInputS.split(" ");
             if (clientInput[0].toUpperCase().equals("DONE")) {
-                sendToClient("+(the message may be charge/accounting info)");
+                sendToClient("+Goodbye");
                 running = false;
                 socket.close();
                 break;
@@ -98,14 +100,13 @@ public class TCPServerInstance {
         }
     }
 
-
     public String user(String userInput) throws Exception {
         boolean userExists = false;
         String[] lineAccounts = null;
         String linePassword = null;
 
         //read in file containing authentication details
-        File authFile = new File("src/Server/authFile.txt");
+        File authFile = new File(root + "/Server/authFile.txt");
 
         /*Read each line of auth file. If user matches user in auth file
          * save username, account and password to local variables.
@@ -276,14 +277,14 @@ public class TCPServerInstance {
     public String cdir(String userInput) {
         /*given correct input of real directory, change global vairable directory
          * to new directory name if user is logged in correctly */
-        String cdDirectory = "src/Server/" + userInput;
+        String cdDirectory = root + "/Server/" + userInput;
         if (userV && passwordV && accountV) {
             directoryTemp = cdDirectory;
             return changeDir();
         }
         //if use is not logged in, ask for password/account and immediately change directory if entered correctly
         if (userV) {
-            cdDirectory = "src/Server/" + userInput;
+            cdDirectory = root + "/Server/" + userInput;
             File file = new File(cdDirectory);
             if (!file.isDirectory()) {
                 return "-Can't connect to directory because: " + cdDirectory + " is not a directory";
@@ -436,7 +437,7 @@ public class TCPServerInstance {
         bufferedStream.close();
         outToClient.flush();
     }
-    
+
     public void stor(String[] userInput) throws Exception {
         if (userInput.length != 3) {
             sendToClient("-Invalid input");
@@ -449,6 +450,7 @@ public class TCPServerInstance {
             int size;
             storMode = null;
             File file = new File(directory + "/" + userInput[2]);
+            
             File directoryF = new File(directory);
             switch (userInput[1].toUpperCase()) {
                 case "NEW":
@@ -487,7 +489,7 @@ public class TCPServerInstance {
 
             while (true) {
                 if (null == resp[0]) {
-                    sendToClient("-Invalid Client Response. Awaiting SIZE <number-of-bytes-in-file>. Send STOP to stop transfer.");
+                    sendToClient("-Invalid Client Response. Awaiting SIZE. Send STOP to stop transfer.");
                 } else {
                     if (resp[0].equals("SIZE")) {
                         size = Integer.parseInt(resp[1]);
@@ -518,7 +520,7 @@ public class TCPServerInstance {
         } else {
             sendToClient("-Not found because: unauthorised, please sign in");
         }
-        
+
     }
 
     /*If send type selected is correct, file will be created on server side
