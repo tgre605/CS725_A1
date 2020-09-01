@@ -8,17 +8,20 @@
 2. [How to setup TCPServer and run](#How-to-set-up-TCPServer-and-Run)
 3. [How to setup TCPClient and run](#How-to-set-up-TCPClient-and-Run)
 4. [Tests](#command-guide)
-    1. [USER Command](#user-command)
-    2. [PASS Command](#user-command)
-    3. [ACCT Command](#pass-command)
-    4. [TYPE Command](#type-command)
-    5. [LIST Command](#list-command)
-    6. [CDIR Command](#cdir-command)
-    7. [KILL Command](#kill-command)
-    8. [NAME Command](#name-command)
-    9. [DONE Command](#done-command)
-    10. [RETR Command](#retr-command)
-    11. [STOR Command](#stor-command)
+    1. [USER Command](#user)
+    2. [PASS Command](#user)
+    3. [ACCT Command](#pass)
+    4. [TYPE Command](#type)
+    5. [LIST Command](#list)
+    6. [CDIR Command](#cdir)
+    7. [KILL Command](#kill)
+    8. [NAME Command](#name)
+    9. [DONE Command](#done)
+    10. [RETR Command](#retr)
+    11. [STOR Command](#stor)
+ 5. [Examples of Possible execution](#examples)
+    1. [Example 1](#example-1)
+    2. [Example 2](#example-2)
     
 ## List of Components
 
@@ -229,4 +232,77 @@ Incorrect send type:
     +File does not exist, will create new file. Sending SIZE 1873
     FROM SERVER: +ok, waiting for file
     FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1-20200901180508.png
+    ```
+
+File does not exist:
+    ```
+    STOR NEW notExist.txt
+    -File does not exist
+    ```
+
+## Examples
+Below are some possible example of communication between the server and client:
+
+### Example 1
+This example uses commands USER, PASS, ACCT, CDIR, LIST, TYPE, RETR, NAME and TOBE
+    ```
+    +TGRE605 SFTP Service
+    USER userID
+    FROM SERVER: +User-id valid, send account and password
+    PASS password1
+    FROM SERVER: + Password ok, send account
+    ACCT account1
+    FROM SERVER: ! Account valid, logged-in
+    CDIR sftp
+    FROM SERVER: !Changed working dir to C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
+    LIST V
+    FROM SERVER: +C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
+    test1-20200901180508.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:05:08 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    test1.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:02:39 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    retr test1.png
+    -Incorrect type selected
+    TYPE B
+    FROM SERVER: +Using Binary
+    RETR test1.png
+    1873
+    SEND
+    File test1.png was saved.
+    LIST f
+    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
+    test1-20200901180508.png
+    test1.png
+    testing.png
+    NAME test1.png
+    FROM SERVER: +File exists
+    TOBE test2.png
+    FROM SERVER: +test1.png renamed to test2.png.png
+    DONE
+    FROM SERVER: +Goodbye
+    ```
+### Example 2
+This example uses commands USER, ACCT, CDIR, TYPE, STOR and LIST
+    ```
+    +TGRE605 SFTP Service
+    USER test3
+    FROM SERVER: +User-id valid, send password
+    PASS password3
+    FROM SERVER: ! logged in
+    CDIR sftp
+    FROM SERVER: !Changed working dir to C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
+    TYPE B
+    FROM SERVER: +Using Binary
+    STOR NEW test1.png
+    +Sending
+    +File does not exist, will create new file. Sending SIZE 1873
+    FROM SERVER: +ok, waiting for file
+    FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1.png
+    LIST V
+    FROM SERVER: +C:\...s\CS725_A1\src/Server/sftp
+    test1-20200901180508.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:05:08 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    test1.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:14:31 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    test2.png.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:02:39 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    DONE
+    FROM SERVER: +Goodbye
     ```
