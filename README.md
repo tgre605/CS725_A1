@@ -60,27 +60,27 @@ The following gives examples of how the system should operate depending on input
 ### USER
 Attempting to sign in to a user should result in the following:
     ```
-    USER userID
+    USER userID  
     FROM SERVER: +User-id valid, send account and password
     ```
     
 If no password or account, it will skip straight to logged in.
 If password or account is expected the following should print:
     ```
-    USER userID
+    USER userID  
     FROM SERVER: +User-id valid, send account and password
     ```
     
 If unknown user entered, the following should print:
     ```
-    USER notExist
+    USER notExist  
     FROM SERVER: Invalid Username
     ```
 
 ### PASS
 If user has been entered and has a password associated with it, after entering password, the following should print:
     ```
-    PASS password1
+    PASS password1  
     FROM SERVER: + Password ok, send account
     ```
 
@@ -89,7 +89,7 @@ If no account is expected, will skill straight to logged in
 ### PASS
 If user has been entered and has a password associated with it, after entering password, the following should print:
     ```
-    ACCT account1
+    ACCT account1  
     FROM SERVER: +Account valid, send password
     ```
     
@@ -98,12 +98,12 @@ If no password is expected, will skill straight to logged in
 ### TYPE
 TYPE must be followed by an A, B or C. If this is input correctly, the following will print:
     ```
-    TYPE B
+    TYPE B  
     FROM SERVER: +Using Binary
     ```
 If input incorrectly, the following will print:
     ```
-    TYPE D
+    TYPE D  
     FROM SERVER: -Type not valid
     ```
 
@@ -113,17 +113,17 @@ The following commands can only be used after the user has logged in successfull
 LIST must be followed by F or V. If this is input correctly, the following will print
 If LIST F, only the file/directory names of the current directory will print for example:
     ```
-    LIST F
-    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
-    test1-20200901150929.png
-    testing.png
+    LIST F  
+    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp  
+    test1-20200901150929.png  
+    testing.png  
     ```
     
 If LIST V, extra details of each file will be printed:
     ```
-    LIST V
-    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
-    test1-20200901150929.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 15:09:29 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
+    LIST V  
+    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp  
+    test1-20200901150929.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 15:09:29 NZST | Owner: DESKTOP-LPVUB0N\thoma  
+    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma  
     ```
 
