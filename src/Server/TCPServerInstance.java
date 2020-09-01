@@ -101,72 +101,77 @@ public class TCPServerInstance {
     }
 
     public String user(String userInput) throws Exception {
-        boolean userExists = false;
-        String[] lineAccounts = null;
-        String linePassword = null;
+        if (!userV){
+            boolean userExists = false;
+            String[] lineAccounts = null;
+            String linePassword = null;
 
-        //read in file containing authentication details
-        File authFile = new File(root + "/Server/authFile.txt");
+            //read in file containing authentication details
+            File authFile = new File(root + "/Server/authFile.txt");
 
-        /*Read each line of auth file. If user matches user in auth file
-         * save username, account and password to local variables.
-         * If no account/password exists, assume verified user
-         * if no matching user, tell client invalid input */
-        BufferedReader reader = new BufferedReader(new FileReader(authFile));
-        String line = reader.readLine();
-        while (line != null) {
-            String[] userInfo = line.split(" ");
-            String lineUsername = userInfo[0];
-            if (lineUsername.equals(userInput)) {
-                userExists = true;
-                if (userInfo.length == 2) {
-                    if (!(userInfo[1] == null)) {
-                        lineAccounts = userInfo[1].split(",");
+            /*Read each line of auth file. If user matches user in auth file
+             * save username, account and password to local variables.
+             * If no account/password exists, assume verified user
+             * if no matching user, tell client invalid input */
+            BufferedReader reader = new BufferedReader(new FileReader(authFile));
+            String line = reader.readLine();
+            while (line != null) {
+                String[] userInfo = line.split(" ");
+                String lineUsername = userInfo[0];
+                if (lineUsername.equals(userInput)) {
+                    userExists = true;
+                    if (userInfo.length == 2) {
+                        if (!(userInfo[1] == null)) {
+                            lineAccounts = userInfo[1].split(",");
+                        }
+                        passwordV = true;
+                    } else if (userInfo.length == 3) {
+                        if (!(userInfo[1] == null)) {
+                            lineAccounts = userInfo[1].split(",");
+                        }
+                        linePassword = userInfo[2];
                     }
-                    passwordV = true;
-                } else if (userInfo.length == 3) {
-                    if (!(userInfo[1] == null)) {
-                        lineAccounts = userInfo[1].split(",");
-                    }
-                    linePassword = userInfo[2];
-                }
-                if (userInfo.length == 1) {
-                    accountV = true;
-                    passwordV = true;
-                } else if (userInfo.length == 2) {
-                    accounts = lineAccounts;
-                    password = null;
-                    passwordV = true;
-                } else if (userInfo.length == 3) {
-                    assert userInfo[1] != null;
-                    if (userInfo[1].isEmpty()) {
-                        account = null;
+                    if (userInfo.length == 1) {
                         accountV = true;
+                        passwordV = true;
+                    } else if (userInfo.length == 2) {
+                        accounts = lineAccounts;
+                        password = null;
+                        passwordV = true;
+                    } else if (userInfo.length == 3) {
+                        assert userInfo[1] != null;
+                        if (userInfo[1].isEmpty()) {
+                            account = null;
+                            accountV = true;
+                        }
+                        accounts = lineAccounts;
+                        password = linePassword;
                     }
-                    accounts = lineAccounts;
-                    password = linePassword;
+                    break;
                 }
-                break;
+                line = reader.readLine();
             }
-            line = reader.readLine();
-        }
-        if (!userExists) {
-            return "Invalid Username";
-        }
-        userV = true;
-        user = userInput;
-        //If password/account exists, ask user to send password/account to be verified
-        if (passwordV && accountV) {
-            return "!" + userInput + " logged in";
-        } else {
-            if (accountV) {
-                return "+User-id valid, send password";
-            } else if (passwordV) {
-                return "+User-id valid, send account";
+            if (!userExists) {
+                return "Invalid Username";
+            }
+            userV = true;
+            user = userInput;
+            //If password/account exists, ask user to send password/account to be verified
+            if (passwordV && accountV) {
+                return "!" + userInput + " logged in";
             } else {
-                return "+User-id valid, send account and password";
+                if (accountV) {
+                    return "+User-id valid, send password";
+                } else if (passwordV) {
+                    return "+User-id valid, send account";
+                } else {
+                    return "+User-id valid, send account and password";
+                }
             }
+        }else {
+            return "-User already logged in";
         }
+        
     }
 
     public String acct(String userInput) {
@@ -269,9 +274,12 @@ public class TCPServerInstance {
                     response.append(String.format("Owner: " + "%6s", attr.getOwner().getName())).append("\r\n");
                 }
                 return response.toString();
+            } else {
+                return "-Invalid input";
             }
-        }
-        return "-Not found because: unauthorised, please sign in";
+            
+        }else 
+            return "-Not found because: unauthorised, please sign in";
     }
 
     public String cdir(String userInput) {
@@ -534,7 +542,7 @@ public class TCPServerInstance {
                 bufferedStream.write(inFromClient.read());
             }
             sendToClient("+Saved " + file);
-        } else if (Objects.equals(sendType, "B")) {
+        } else if (Objects.equals(sendType, "B") || (Objects.equals(sendType, "C"))) {
             int e;
             int i = 0;
             byte[] bytes = new byte[(int) size];
