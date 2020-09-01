@@ -8,7 +8,7 @@
     3. [Authentication file](#authentication-file)
 2. [How to setup TCPServer and run](#How-to-set-up-TCPServer-and-Run)
 3. [How to setup TCPClient and run](#How-to-set-up-TCPClient-and-Run)
-4. [Tests](#command-guide)
+4. [Tests](#Tests)
     1. [USER Command](#user)
     2. [PASS Command](#user)
     3. [ACCT Command](#pass)
@@ -63,145 +63,143 @@ The following gives examples of how the system should operate depending on input
 
 ### USER
 Attempting to sign in to a user should result in the following:
-     ```
-     USER userID  
-     FROM SERVER: +User-id valid, send account and password
-     ```
+   ``` 
+   USER userID  
+   FROM SERVER: +User-id valid, send account and password
+   ``` 
     
 If no password or account, it will skip straight to logged in.
 If password or account is expected the following should print:
-    ```
-    USER userID  
-    FROM SERVER: +User-id valid, send account and password
-    ```
+   ``` 
+   USER userID  
+   FROM SERVER: +User-id valid, send account and password
+   ``` 
     
 If unknown user entered, the following should print:
-    ```
-    USER notExist  
-    FROM SERVER: Invalid Username
-    ```
+   ``` 
+   USER notExist  
+   FROM SERVER: Invalid Username
+   ``` 
 
 ### PASS
 If user has been entered and has a password associated with it, after entering password, the following should print:
-    ```
-    PASS password1  
-    FROM SERVER: + Password ok, send account
-    ```
+   ``` 
+   PASS password1  
+   FROM SERVER: + Password ok, send account
+   ``` 
 
 If no account is expected, will skill straight to logged in
 
 ### PASS
 If user has been entered and has a password associated with it, after entering password, the following should print:
-    ```
-    ACCT account1  
-    FROM SERVER: +Account valid, send password
-    ```
+   ``` 
+   ACCT account1  
+   FROM SERVER: +Account valid, send password
+   ``` 
     
 If no password is expected, will skill straight to logged in
 
 ### TYPE
 TYPE must be followed by an A, B or C. If this is input correctly, the following will print:
-    ```
-    TYPE B  
-    FROM SERVER: +Using Binary
-    ```
+   ``` 
+   TYPE B  
+   FROM SERVER: +Using Binary
+   ``` 
 If input incorrectly, the following will print:
-    ```
-    TYPE D  
-    FROM SERVER: -Type not valid
-    ```
-
+   ``` 
+   TYPE D  
+   FROM SERVER: -Type not valid
+   ``` 
 The following commands can only be used after the user has logged in successfully. If user send invalid input, server will respond with negative response saying invalid input
 
 ### LIST
 LIST must be followed by F or V. If this is input correctly, the following will print
 If LIST F, only the file/directory names of the current directory will print for example:
-    ```
-    LIST F  
-    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp  
-    test1-20200901150929.png  
-    testing.png  
-    ```
+   ``` 
+   LIST F  
+   FROM SERVER: +C:\...\CS725_A1\src/Server/sftp  
+   test1-20200901150929.png  
+   testing.png  
+   ``` 
     
 If LIST V, extra details of each file will be printed:
-    ```
-    LIST V  
-    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp  
-    test1-20200901150929.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 15:09:29 NZST | Owner: DESKTOP-LPVUB0N\thoma  
-    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma  
-    ```
+   ``` 
+   LIST V  
+   FROM SERVER: +C:\...\CS725_A1\src/Server/sftp  
+   test1-20200901150929.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 15:09:29 NZST | Owner: DESKTOP-LPVUB0N\thoma  
+   testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma  
+   ``` 
 
 ### CDIR
 CDIR must be followed by a directory that exists. It must be entered as though the user is starting at the root directory (ie. /src)
 IF entered correctly, the following will print:
-    ```
-    CDIR sftp
-    FROM SERVER: !Changed working dir to C:\...\CS725_A1\src/Server/sftp
-    ```
+   ``` 
+   CDIR sftp
+   FROM SERVER: !Changed working dir to C:\...\CS725_A1\src/Server/sftp
+   ``` 
  
 If the directory does not exists, the following will print:
-    ```
-    CDIR sftp/test
-    FROM SERVER: -Can't connect to directory because: C:\...\CS725_A1\src/Server/sftp/test is not a directory
-    ```
+   ``` 
+   CDIR sftp/test
+   FROM SERVER: -Can't connect to directory because: C:\...\CS725_A1\src/Server/sftp/test is not a directory
+   ``` 
  
 ### KILL
 KILL must be followed by a filename that exists in the current directory. If entered correctly, the following will print:
-    ```
-    KILL test1.png
-    FROM SERVER: +test1.png deleted
-    ```
-
+   ``` 
+   KILL test1.png
+   FROM SERVER: +test1.png deleted
+   ``` 
 If the file does not exists, the following will print:
-    ```
-    KILL noExist.txt
-    FROM SERVER: -Not deleted because file does not exist
-    ```
+   ``` 
+   KILL noExist.txt
+   FROM SERVER: -Not deleted because file does not exist
+   ``` 
 
 ### NAME
 NAME must be followed by a filename that exists in the current directory. If entered correctly, the following will print:
-    ```
-    NAME test1.png
-    FROM SERVER: +File exists
-    ```
+   ``` 
+   NAME test1.png
+   FROM SERVER: +File exists
+   ``` 
 
 If the file does not exists, the following will print:
-    ```
-    NAME noExists.png
-    FROM SERVER: -Can't find noExists.png
-    ```
+   ``` 
+   NAME noExists.png
+   FROM SERVER: -Can't find noExists.png
+   ``` 
     
 ### DONE
 DONE can be entered at any time and will close the connection between the client and server. Both sides will shut down. The following will print:
-    ```
-    DONE
-    FROM SERVER: +Goodbye
-    ```
+   ``` 
+   DONE
+   FROM SERVER: +Goodbye
+   ``` 
 
 ### RETR
 RETR must be followed by file that exists within currecnt directory. If entered correctly and in correct send mode for file requested, server will respond with:
-    ```
-    RETR testing.png
-    <size of file in bytes>
-    ```
+   ``` 
+   RETR testing.png
+   <size of file in bytes>
+   ``` 
     
 User can then respond with SEND or STOP. SEND will result in the file being sent by the server and stored within the sftp directory on the client side and the following will print:
-    ```
-    SEND
-    File testing.png was saved.
-    ```
+   ``` 
+   SEND
+   File testing.png was saved.
+   ``` 
     
 If user responds with STOP, the following will print:
-    ```
-    STOP
-    FROM SERVER: +ok, RETR aborted
-    ```
+   ``` 
+   STOP
+   FROM SERVER: +ok, RETR aborted
+   ``` 
 
 If incorrect type was selected, the following will print:
-    ```
-    RETR testing.png
-    -Incorrect type selected
-    ```
+   ``` 
+   RETR testing.png
+   -Incorrect type selected
+   ``` 
 
 ## STOR
 STOR must be followed by {NEW | OLD | APP} and the name of the file to send from the client side
@@ -214,96 +212,96 @@ Wehn STOR is called, the client side will check the file and send type to ensure
 Examples are shown below:
 
 Correct send type:
-    ```
-    STOR NEW test1.png
-    +Sending
-    +File does not exist, will create new file. Sending SIZE 1873
-    FROM SERVER: +ok, waiting for file
-    FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1-20200901180508.png
-    ```
+   ``` 
+   STOR NEW test1.png
+   +Sending
+   +File does not exist, will create new file. Sending SIZE 1873
+   FROM SERVER: +ok, waiting for file
+   FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1-20200901180508.png
+   ``` 
 
 Incorrect send type:
-    ```
-    STOR NEW test1.png
-    -Incorrect type selected
-    TYPE B
-    FROM SERVER: +Using Binary
-    STOR NEW test1.png
-    +Sending
-    +File does not exist, will create new file. Sending SIZE 1873
-    FROM SERVER: +ok, waiting for file
-    FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1-20200901180508.png
-    ```
+   ``` 
+   STOR NEW test1.png
+   -Incorrect type selected
+   TYPE B
+   FROM SERVER: +Using Binary
+   STOR NEW test1.png
+   +Sending
+   +File does not exist, will create new file. Sending SIZE 1873
+   FROM SERVER: +ok, waiting for file
+   FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1-20200901180508.png
+   ``` 
 
 File does not exist:
-    ```
-    STOR NEW notExist.txt
-    -File does not exist
-    ```
+   ``` 
+   STOR NEW notExist.txt
+   -File does not exist
+   ``` 
 
 ## Examples
 Below are some possible example of communication between the server and client:
 
 ### Example 1
 This example uses commands USER, PASS, ACCT, CDIR, LIST, TYPE, RETR, NAME and TOBE
-    ```
-    +TGRE605 SFTP Service
-    USER userID
-    FROM SERVER: +User-id valid, send account and password
-    PASS password1
-    FROM SERVER: + Password ok, send account
-    ACCT account1
-    FROM SERVER: ! Account valid, logged-in
-    CDIR sftp
-    FROM SERVER: !Changed working dir to C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
-    LIST V
-    FROM SERVER: +C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
-    test1-20200901180508.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:05:08 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    test1.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:02:39 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    retr test1.png
-    -Incorrect type selected
-    TYPE B
-    FROM SERVER: +Using Binary
-    RETR test1.png
-    1873
-    SEND
-    File test1.png was saved.
-    LIST f
-    FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
-    test1-20200901180508.png
-    test1.png
-    testing.png
-    NAME test1.png
-    FROM SERVER: +File exists
-    TOBE test2.png
-    FROM SERVER: +test1.png renamed to test2.png.png
-    DONE
-    FROM SERVER: +Goodbye
-    ```
+   ``` 
+   +TGRE605 SFTP Service
+   USER userID
+   FROM SERVER: +User-id valid, send account and password
+   PASS password1
+   FROM SERVER: + Password ok, send account
+   ACCT account1
+   FROM SERVER: ! Account valid, logged-in
+   CDIR sftp
+   FROM SERVER: !Changed working dir to C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
+   LIST V
+   FROM SERVER: +C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
+   test1-20200901180508.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:05:08 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   test1.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:02:39 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   retr test1.png
+   -Incorrect type selected
+   TYPE B
+   FROM SERVER: +Using Binary
+   RETR test1.png
+   1873
+   SEND
+   File test1.png was saved.
+   LIST f
+   FROM SERVER: +C:\...\CS725_A1\src/Server/sftp
+   test1-20200901180508.png
+   test1.png
+   testing.png
+   NAME test1.png
+   FROM SERVER: +File exists
+   TOBE test2.png
+   FROM SERVER: +test1.png renamed to test2.png.png
+   DONE
+   FROM SERVER: +Goodbye
+   ``` 
 ### Example 2
 This example uses commands USER, ACCT, CDIR, TYPE, STOR and LIST
-    ```
-    +TGRE605 SFTP Service
-    USER test3
-    FROM SERVER: +User-id valid, send password
-    PASS password3
-    FROM SERVER: ! logged in
-    CDIR sftp
-    FROM SERVER: !Changed working dir to C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
-    TYPE B
-    FROM SERVER: +Using Binary
-    STOR NEW test1.png
-    +Sending
-    +File does not exist, will create new file. Sending SIZE 1873
-    FROM SERVER: +ok, waiting for file
-    FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1.png
-    LIST V
-    FROM SERVER: +C:\...s\CS725_A1\src/Server/sftp
-    test1-20200901180508.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:05:08 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    test1.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:14:31 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    test2.png.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:02:39 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
-    DONE
-    FROM SERVER: +Goodbye
-    ```
+   ``` 
+   +TGRE605 SFTP Service
+   USER test3
+   FROM SERVER: +User-id valid, send password
+   PASS password3
+   FROM SERVER: ! logged in
+   CDIR sftp
+   FROM SERVER: !Changed working dir to C:\Users\thoma\Documents\CS725_A1\src/Server/sftp
+   TYPE B
+   FROM SERVER: +Using Binary
+   STOR NEW test1.png
+   +Sending
+   +File does not exist, will create new file. Sending SIZE 1873
+   FROM SERVER: +ok, waiting for file
+   FROM SERVER: +Saved C:\...\CS725_A1\src\Server\sftp\test1.png
+   LIST V
+   FROM SERVER: +C:\...s\CS725_A1\src/Server/sftp
+   test1-20200901180508.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:05:08 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   test1.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:14:31 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   test2.png.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 18:02:39 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   testing.png | Size:      1kBs | Last modified: Tue, 01 Sep 2020 14:53:26 NZST | Owner: DESKTOP-LPVUB0N\thoma
+   DONE
+   FROM SERVER: +Goodbye
+   ``` 
