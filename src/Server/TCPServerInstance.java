@@ -537,20 +537,23 @@ public class TCPServerInstance {
     private void fileIntake(int size) throws IOException {
         File file = new File(newFileS);
         if (Objects.equals(sendType, "A")) {
-            BufferedOutputStream bufferedStream = new BufferedOutputStream(new FileOutputStream(file, "APP".equals(storMode)));
+            FileOutputStream fileStream = new FileOutputStream(file, "APP".equals(storMode));
+            BufferedOutputStream bufferedStream = new BufferedOutputStream(fileStream);
             for (int i = 0; i < size; i++) {
                 bufferedStream.write(inFromClient.read());
             }
+            bufferedStream.flush();
+            bufferedStream.close();
             sendToClient("+Saved " + file);
         } else if (Objects.equals(sendType, "B") || (Objects.equals(sendType, "C"))) {
-            int e;
+            int a;
             int i = 0;
             byte[] bytes = new byte[(int) size];
             FileOutputStream fileOutputStream = new FileOutputStream(file, "APP".equals(storMode));
             while (i < size) {
-                e = binFromClient.read(bytes);
-                fileOutputStream.write(bytes, 0, e);
-                i += e;
+                a = binFromClient.read(bytes);
+                fileOutputStream.write(bytes, 0, a);
+                i += a;
             }
             fileOutputStream.flush();
             fileOutputStream.close();
