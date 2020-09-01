@@ -69,16 +69,43 @@ public class TCPServerInstance {
     //send input argument to correct function depending on argument
     public void mode(String[] modeArgs) throws Exception {
         switch (modeArgs[0].toUpperCase()) {
-            case "USER" -> sendToClient(user(modeArgs[1]));
-            case "ACCT" -> sendToClient(acct(modeArgs[1]));
-            case "PASS" -> sendToClient(pass(modeArgs[1]));
-            case "TYPE" -> type(modeArgs[1]);
-            case "LIST" -> sendToClient(list(modeArgs[1]));
-            case "CDIR" -> sendToClient(cdir(modeArgs[1]));
-            case "KILL" -> sendToClient(kill(modeArgs[1]));
-            case "NAME" -> sendToClient(name(modeArgs[1]));
-            case "TOBE" -> sendToClient(tobe(modeArgs[1]));
-            case "SEND" -> {
+            case "USER": {
+                sendToClient(user(modeArgs[1]));
+                break;
+            }
+            case "ACCT": {
+                sendToClient(acct(modeArgs[1]));
+                break;
+            }
+            case "PASS": {
+                sendToClient(pass(modeArgs[1]));
+                break;
+            }
+            case "TYPE": {
+                type(modeArgs[1]);
+                break;
+            }
+            case "LIST": {
+                sendToClient(list(modeArgs[1]));
+                break;
+            }
+            case "CDIR": {
+                sendToClient(cdir(modeArgs[1]));
+                break;
+            }
+            case "KILL": {
+                sendToClient(kill(modeArgs[1]));
+                break;
+            }
+            case "NAME": {
+                sendToClient(name(modeArgs[1]));
+                break;
+            }
+            case "TOBE": {
+                sendToClient(tobe(modeArgs[1]));
+                break;
+            }
+            case "SEND": {
                 //if send command is received, depending on if RETR has been called, execute send
                 int resp = send();
                 if (resp == 0) {
@@ -87,16 +114,27 @@ public class TCPServerInstance {
                 } else {
                     sendToClient("-Not found because: unauthorised, please sign in");
                 }
+                break;
             }
-            case "RETR" -> sendToClient(retr(modeArgs[1]));
-            case "STOP" -> {
+            case "RETR": {
+                sendToClient(retr(modeArgs[1]));
+                break;
+            }
+            case "STOP": {
                 //if RETR has been called and then stopped, reset variables that allow send
                 fileToRetr = null;
                 retrV = false;
                 sendToClient("+ok, RETR aborted");
+                break;
             }
-            case "STOR" -> stor(modeArgs);
-            default -> sendToClient("-invalid Command");
+            case "STOR": {
+                stor(modeArgs);
+                break;
+            }
+            default: {
+                sendToClient("-invalid Command");
+                break;
+            }
         }
     }
 
@@ -231,19 +269,25 @@ public class TCPServerInstance {
     public void type(String userInput) throws Exception {
         //depending on user input, change made to ascii or binary for sending and receiving files
         switch (userInput) {
-            case "A" -> {
+            case "A": {
                 sendType = "A";
                 sendToClient("+Using Ascii");
+                break;
             }
-            case "B" -> {
+            case "B": {
                 sendType = "B";
                 sendToClient("+Using Binary");
+                break;
             }
-            case "C" -> {
+            case "C": {
                 sendType = "C";
                 sendToClient("+Using Continuous");
+                break;
             }
-            default -> sendToClient("-Type not valid");
+            default: {
+                sendToClient("-Type not valid");
+                break;
+            }
         }
     }
 
@@ -607,7 +651,7 @@ public class TCPServerInstance {
      * If end of line reached but not end of input keep reading*/
     private static String readFromClient(BufferedReader inFromClient) throws IOException {
         StringBuilder text = new StringBuilder();
-        var character = 0;
+        int character = 0;
         while (true) {
             character = inFromClient.read();
             if ((char) character == '\0' && text.length() > 0) {

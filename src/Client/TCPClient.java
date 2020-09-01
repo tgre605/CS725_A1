@@ -58,30 +58,71 @@ class TCPClient {
     * to be performed within switch case*/
     public static void mode(String modeArg) throws Exception {
         switch (modeArg.toUpperCase()) {
-            case "USER" -> user();
-            case "ACCT" -> acct();
-            case "PASS" -> pass();
-            case "TYPE" -> type(sentence.split(" ")[1]);
-            case "LIST" -> list();
-            case "CDIR" -> cdir();
-            case "KILL" -> kill();
-            case "NAME" -> name();
-            case "TOBE" -> tobe();
-            case "SEND" -> send();
-            case "STOP" -> {
+            case "USER": {
+                user();
+                break;
+            }
+            case "ACCT": {
+                acct();
+                break;
+            }
+            case "PASS": {
+                pass();
+                break;
+            }
+            case "TYPE": {
+                type(sentence.split(" ")[1]);
+                break;
+            }
+            case "LIST": {
+                list();
+                break;
+            }
+            case "CDIR": {
+                cdir();
+                break;
+            }
+            case "KILL": {
+                kill();
+                break;
+            }
+            case "NAME": {
+                name();
+                break;
+            }
+            case "TOBE": {
+                tobe();
+                break;
+            }
+            case "SEND": {
+                send();
+                break;
+            }
+            case "STOP": {
                 fileToRetr = null;
                 size = 0;
                 sendToServer(sentence);
+                break;
             }
-            case "RETR" -> retr();
-            case "STOR" -> stor();
-            case "DONE" -> {
+            case "RETR": {
+                retr();
+                break;
+            }
+            case "STOR": {
+                stor();
+                break;
+            }
+            case "DONE": {
                 sendToServer(sentence);
                 System.out.println("FROM SERVER: " + readFromServer(inFromServer));
                 running = false;
                 clientSocket.close();
+                break;
             }
-            default -> sendToServer("-Invalid Command");
+            default: {
+                sendToServer("-Invalid Command");
+                break;
+            }
         }
     }
     
@@ -280,7 +321,7 @@ class TCPClient {
      * If end of line reached but not end of input keep reading*/
     private static String readFromServer(BufferedReader inFromServer) throws IOException {
         StringBuilder text = new StringBuilder();
-        var character = 0;
+        int character = 0;
         while (true){
             character = inFromServer.read();
             if ((char) character == '\0' && text.length() > 0) {
