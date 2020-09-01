@@ -8,7 +8,7 @@
     3. [Authentication file](#authentication-file)
 2. [How to setup TCPServer and run](#How-to-set-up-TCPServer-and-Run)
 3. [How to setup TCPClient and run](#How-to-set-up-TCPClient-and-Run)
-4. [Tests](#command-guide)
+4. [Tests](#Tests)
     1. [USER Command](#user)
     2. [PASS Command](#user)
     3. [ACCT Command](#pass)
